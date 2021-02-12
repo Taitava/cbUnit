@@ -1,7 +1,7 @@
 
 Include "cbRepository.com.cb"
 
-Const cbUnit_TESTS_DIRECTORY = ".."
+Const cbUnit_TESTS_DIRECTORY = "tests"
 Const cbUnit_TEST_FILE_PATTERN = "test_*.cb"
 Const cbUnit_TEST_PROGRAM_FILE_NAME = "CBCompiler\Editor.out" // Our final test program will be written to this file. CBCompiler.exe expects exactly this file name.
 Const cbUnit_TEST_PROGRAM_OUTPUT_FILE_NAME = "cbUnit.results.txt" // Our final test program will write its test results to this file
@@ -49,10 +49,10 @@ End
 Function CompileAndRun()
 	// Write instructions For CBCompiler
 	instructions = OpenToWrite("CBCompiler\Compiler")
-	WriteLine instructions, "t"+"ype=1"
-	WriteLine instructions, "sourcedir="
+	WriteLine instructions, "t"+"ype=1" // 1: We want To build an exe. 0 would mean that we would only want To check syntax.
+	WriteLine instructions, "sourcedir="+cbUnit_ApplicationDirectory+"\" // Application root directory. Include commands in the test_*.cb files rely ON this command.
 	WriteLine instructions, "buildto=cbRun" // changing cbRun To something Else does Not work, the compiler will create a cbRun.exe file any way.
-	WriteLine instructions, "force=0" // I guess that this could be used To turn Force Variable Declaraction ON, but I haven't tested.
+	WriteLine instructions, "force=0" // Can be used To turn Force Variable Declaraction ON. Could be an interesting option To offer at some point.
 	CloseFile instructions
 	
 	// Create a .cmd file that will call the compiler, Wait that it finishes, and then call the test program And Wait that it finishes, And Then Delete a signal file.
@@ -110,6 +110,7 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 			line_ = IReplace(line_, "@test_file_path", test_file_path)
 			line_ = IReplace(line_, "@output_file_path", output_file_path)
 			line_ = IReplace(line_, "@application_directory", application_directory)
+			line_ = IReplace(line_, "@cbunit_directory", cbUnit_Directory)
 			WriteLine test_program_file, line_
 		EndIf
 	Wend
@@ -134,14 +135,15 @@ Function GenerateListOfTestFunctions(test_file_path$)
 EndFunction
 
 Function GenerateListOfTestFiles()
-	If Not IsDirectory(cbUnit_TESTS_DIRECTORY) Then Return HandleError("getListOfTestFiles", "Directory "+cbUnit_TESTS_DIRECTORY+" does n"+"ot exist.")
-	ChDir cbUnit_TESTS_DIRECTORY
+	tests_directory_path$  = cbUnit_ApplicationDirectory + "\" + cbUnit_TESTS_DIRECTORY
+	If Not IsDirectory(tests_directory_path) Then Return HandleError("getListOfTestFiles", "Directory "+tests_directory_path+" does n"+"ot exist.")
+	ChDir tests_directory_path
 	StartSearch
 	Repeat
 		file_name$ = FindFile()
 		If PatternCompare(cbUnit_TEST_FILE_PATTERN, file_name, False, "*") Then
 			// This is a test_*.cb file
-			NewTestFile(cbUnit_TESTS_DIRECTORY + "\" + file_name)
+			NewTestFile(tests_directory_path + "\" + file_name)
 		EndIf
 	Until "" = file_name
 	EndSearch
