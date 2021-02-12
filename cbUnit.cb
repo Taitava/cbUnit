@@ -9,8 +9,8 @@ Const cbUnit_TEST_FUNCTION_PATTERN = "*Function test_*(*"
 Const cbUnit_TEST_MAIN_SKELETON = "test-main.skeleton.cb"
 Const cbUnit_TEST_CALL_SKELETON = "test-call.skeleton.cb"
 
-Global cbUnit_Directory$ : cbUnit_Directory = CurrentDir() // Direcotry of the cbUnit program
-Global cbUnit_ApplicationDirectory$ : cbUnit_ApplicationDirectory = CurrentDir() + "..\.." // Directory where the testable application lives
+Global cbUnit_Directory$ : cbUnit_Directory = CleanPath(CurrentDir()) // Direcotry of the cbUnit program. Remove trailing slash.
+Global cbUnit_ApplicationDirectory$ : cbUnit_ApplicationDirectory = CleanPath(CurrentDir() + "..\..") // Directory where the testable application lives
 Global cbUnit_EOL$ : cbUnit_EOL = Chr(13) + Chr(10)
 
 Type cbUnit_TestFile

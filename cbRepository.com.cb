@@ -87,3 +87,55 @@ Function CountWords2(a As String, c As String)
    Forever
    Return n // Palautetaan esiintymien m‰‰r‰
 EndFunction
+
+
+// Saved 2021-02-13 to http://www.cbrepository.com/codes/code/104/ (the same time that I wrote it in this file)
+//
+// Does the following cleanups to the given path:
+// - Resolves .. in directory paths (if possible)
+// - Converts / to \
+// - Converts double \\ to \
+// The second parameter is used to determine whether you want the path to end with a backslash or not (True/False).
+Function CleanPath(path$, end_with_backslash=0)
+	path = Replace(path, "/", "\")
+	path = Replace(path, "\\", "\")
+	
+	// Resolve possible ".." folders (= references To parent folders)
+	position=1
+	While InStr(path, "\..", position)
+		position = InStr(path, "\..", position)
+		path_start$ = Left(path, position-1) // Contains a trailing folder name that we need To remove later. Does Not contain a trailing backslash.
+		path_end$ = Mid(path, position+Len("\..\")) // Might be an empty String
+		
+		If Right(path_start,2) = ".." Then
+			// path_start ends with a ..
+			// This means that we have found a ../.. reference.
+			// Do Not remove it because we only come here If the ../.. reference was in the beginning of the path.
+			position+1
+		Else
+			// path_start has a regular folder name at the End of it
+			// Remove the Last folder from path_start
+			For i = Len(path_start) To 1 Step -1
+				character$ = Mid(path_start,i,1)
+				If character = "\" Then
+					path_start = Left(path_start,i) // Will Include a trailing backslash
+					Exit
+				ElseIf i = 1 Then
+					path_start = ""
+					Exit
+				EndIf
+			Next i
+			
+			// Slice foldername\.. out from middle of path
+			path = path_start + path_end
+			position = 1 // Make sure to start the Next InStr() check from the beginning
+		EndIf
+	Wend
+	
+	If end_with_backslash Then
+		If Right(path,1) <> "\" Then path + "\"
+	Else
+		If Right(path,1) = "\" Then path = Left(path,Len(path)-1) // Remove the backslash
+	EndIf
+	Return path
+EndFunction
