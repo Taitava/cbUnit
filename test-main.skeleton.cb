@@ -1,0 +1,20 @@
+
+// Variables:
+// @ application_directory: string, contains the root directory of the testable application. Root directory = parent of "tests" directory.
+// @ test_file_path: string, contains a directory + file name to a test_*.cb file that we should include into the program
+// @ output_file_path: string, contains a directory + file name to where we will write the test result. The file will be overwritten if it exists.
+
+
+ChDir "@application_directory"
+
+// Include basic assertion related tool functions
+Include "cbUnit-asserts.cb"
+
+// Include the user-defined test file
+Include "@test_file_path"
+
+// INSERT TEST CALLS HERE //
+
+cbUnit_WriteResults("@output_file_path", "@test_file_path")
+
+

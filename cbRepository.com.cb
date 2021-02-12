@@ -1,0 +1,89 @@
+
+
+// Copied 2021-02-12 from http://www.cbrepository.com/codes/code/87/
+// Created 2013-09-20 by Jare
+// Modifications: none
+Function PatternCompare(pattern$, compare$, case_sensitive=1, wildcard$="*", escape$="\")
+    position = 1
+    If Not case_sensitive Then
+        pattern = Lower(pattern)
+        compare = Lower(compare)
+    EndIf
+    If escape <> "" Then
+        pattern = Replace(pattern, escape+escape, Chr(1))
+        pattern = Replace(pattern, escape+wildcard, Chr(2))
+    EndIf
+    count_bits = CountWords2(pattern, wildcard)
+    For i = 1 To count_bits
+        bit$    = GetWord2(pattern, i, wildcard)
+        bit     = Replace(bit, Chr(1), escape)
+        bit     = Replace(bit, Chr(2), wildcard)
+        position= InStr(compare, bit, position)
+        If position = 0 Then Return False
+        If i = 1 And position > 1 And Left(pattern,1) <> wildcard Then Return False
+        If i = count_bits And position < Len(compare) - Len(bit) + 1 And Right(pattern,1) <> wildcard Then Return False
+    Next i
+    Return True
+EndFunction
+
+
+// Copied 2021-02-12 from http://www.cbrepository.com/codes/code/94/
+// Created 2014-12-26 by Jare
+// Modifications: none
+Function IReplace(haystack$, find$, replace_$)
+	haystack2$	= Lower(haystack)
+	find		= Lower(find)
+	position	= InStr(haystack2, find)
+	result$		= ""
+	old_position= 1
+	While position
+		result		= result + Mid(haystack, old_position, position-old_position) + replace_$
+		old_position= position + Len(find)
+		position	= InStr(haystack2, find, old_position)
+	Wend
+	result = result + Mid(haystack, old_position)
+	Return result
+EndFunction
+
+
+// Copied 2021-02-12 http://www.cbrepository.com/codes/code/93/
+// Created 2014-12-25 by Jare
+// Modifications: none
+Function GetBetween$(haystack$, start$, stop$, notfound$="")
+	a = InStr(haystack, start)
+	b = InStr(haystack, stop, a+1)
+	If a = 0 Or b = 0 Then Return notfound
+	Return Mid(haystack, a+Len(start), b-(a+Len(start)))
+EndFunction
+
+
+// Copied 2021-02-12 from http://www.cbrepository.com/codes/code/11/
+// Created 2011-04-09 by KilledWhale
+// Modifications: added $ to the GetWord2() function name. No other modifications
+Function GetWord2$(a As String, b As Integer, c As String)
+   l = Len(c) // Otetaan pituus muuttujaan optimoinniksi
+	For i As Integer = 2 To b // Käydään läpi kaikki ei-halutut sanat
+	  q = InStr(a, c) // Katsotaan löytyykö erotinta
+		If q Then // Löytyi
+			a = Mid(a, q + l) // Otetaan alkuosa pois erottimeen asti
+	  EndIf
+	Next i
+
+   q = InStr(a, c) // Katsotaan vielä löytyykö erotinta
+	If q Then // Jos löytyi
+		Return Mid(a, 1, q - 1) // Palautetaan tekstiä seuraavaan erottimeen asti
+	Else // Ei löytynyt
+		Return Mid(a, 1) // Palautetaan loppuosa
+	EndIf
+EndFunction
+
+Function CountWords2(a As String, c As String)
+   Repeat
+	  n + 1 // Kasvatetaan arvoa, että montako ON löydetty
+	  aa = InStr(a, c, aa + 1) // Katsotaan löytyykö erotinta
+	  If Not aa Then // Jos ei löydy
+		 Exit // Poistutaan
+	  EndIf
+   Forever
+   Return n // Palautetaan esiintymien määrä
+EndFunction

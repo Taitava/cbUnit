@@ -1,0 +1,11 @@
+
+// Call function @test_function_name()
+
+// Variables:
+// @ test_function_name: string, a function name that we should call. It contains a test that either fails or succeeds.
+
+If Not cbUnit_HasFailures() Then
+	// Only run the test call If previous tests have Not failed!
+	cbUnit_SetCurrentContext("@test_function_name") // If failures happen, we will know under which test_*() Function they happened.
+	@test_function_name()
+EndIf
