@@ -1,7 +1,12 @@
 # cbUnit
 Unit tests for CoolBasic.
 
-The documentation is under construction.
+- Unit testing is a method for testing parts of an application one by one, separately from other parts. [More about unit testing in Wikipedia](https://en.wikipedia.org/wiki/Unit_testing)
+- CoolBasic is an easy to learn game/application programming language for Windows. [More in CoolBasic.com](https://coolbasic.com)
+
+The documentation is still under construction.
+
+
 
 ## Settings
 ### In test_*.cb files
@@ -13,3 +18,11 @@ CBUNIT_STOP_AT | "ASSERT", "FUNCTION", "" | Defines how failures are tolerated. 
 
 ### Application's global settings
 These do not exist yet.
+
+## Contributing
+Ideas, bug repots, pull requests: all welcome! :) [Just raise an issue in GitHub](https://github.com/Taitava/cbUnit/issues)
+
+## Author
+This library is created by Jarkko Linnanvirta. Contact me:
+ - [in GitHub](https://github.com/Taitava)
+ - via email: j -at- jare -dot- fi
