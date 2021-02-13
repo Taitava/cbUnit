@@ -78,6 +78,10 @@ Function CompileAndRun()
 	WriteLine cmd, "echo Finishing..."
 	WriteLine cmd, "del cbUnitTestProgram.exe"
 	WriteLine cmd, "del signal"
+	WriteLine cmd, "del CompileLog.txt"
+	WriteLine cmd, "del Compiler" // Delete the instructions file
+	WriteLine cmd, "del Editor.out"
+	WriteLine cmd, "del %0" // Delete call_compiler.cmd
 	CloseFile cmd
 	
 	// Signal ourself that the test program is running (actually, will soon be running)
