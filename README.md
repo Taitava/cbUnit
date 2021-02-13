@@ -87,11 +87,16 @@ There is currently no way to select which test file(s) will be run. cbUnit runs 
 ## Settings
 ### In test_*.cb files
 
-Setting | Possible values | Description 
---------|-----------------|-------------
-CBUNIT_COMMANDLINE | (any string) Default: `""` (an empty string) | This string will be available via CommandLine() in your application and test file. cbUnit.exe reads this from your test_*.cb file and uses it when executing that file. That's why it may seem strange how this setting works.
-CBUNIT_FORCE_VARIABLE_DECLARATION | `0` or `1`. Default: `0` | Whether to use the CBCompiler's FVD option to require that all variables used in the program should be predefined (e.g. with `Dim`) before usage. Very powerful for preventing bugs caused by typos in variable names, but in addition to the fact that your test files need to adhere to FVD, also your whole application needs to adhere to it.
-CBUNIT_STOP_AT | `"ASSERT"`, `"FUNCTION"`, `""` <br> Default: `""` (an empty string) | Defines how failures are tolerated. ASSERT: Prevent further test immediately when an assertation fails. FUNCTION: When an assertation fails, complete the current test_*() function but stop after that. "" or anything else: do not stop (default behaviour). Note that this setting does not prevent the test program from executing other test_*.cb files!
+Setting | Possible values | Description
+--------|-----------------|------------
+CBUNIT_COMMANDLINE<br>*class*: **synthetic** | (any string) Default: `""` (an empty string) | This string will be available via CommandLine() in your application and test file.
+CBUNIT_FORCE_VARIABLE_DECLARATION<br>*class*: **synthetic** | `0` or `1`. Default: `0` | Whether to use the CBCompiler's FVD option to require that all variables used in the program should be predefined (e.g. with `Dim`) before usage. Very powerful for preventing bugs caused by typos in variable names, but in addition to the fact that your test files need to adhere to FVD, also your whole application needs to adhere to it.
+CBUNIT_STOP_AT<br>*class*: **runtime** | `"ASSERT"`, `"FUNCTION"`, `""` <br> Default: `""` (an empty string) | Defines how failures are tolerated. ASSERT: Prevent further test immediately when an assertation fails. FUNCTION: When an assertation fails, complete the current test_*() function but stop after that. "" or anything else: do not stop (default behaviour). Note that this setting does not prevent the test program from executing other test_*.cb files!
+
+#### Setting classes
+You don't really need to know what these different setting classes mean, as they just have some technical differences, but in case if you happen to wonder how certain settings actually work in a detail level, then this information may help.
+- **runtime**: These settings are interpreted in the runtime part of cbUnit: in `cbUnit.runtime.cb`, `cbUnit.assert.cb`. If you define *runtime* settings as constants in your `test_*.cb` files, cbUnit uses them naturally (compare to *synthetic* settings).
+- **synthetic**: These settings are interpreted in `cbUnit.cb`/`cbUnit.exe` and may exist in your `test_*.cb` files if you have defined them there, but they are not actually used by the compiled final test program. Instead, they are read by `cbUnit.exe` , which then uses them to control how it will build/compile/execute the final test program. E.g. `CBUNIT_COMMANDLINE` might be a constant in your `test_*.cb` file, but by the time your test program is executed, it would be too late to read the expected commandline value from that constant, as CoolBasic has already set the value of `CommandLine()` from the real commandline of the program. And as `cbUnit.exe` is in this case the executor of the program, it has submitted the value of `CBUNIT_COMMANDLINE` for CoolBasic to pick up.
 
 ### Application's global settings
 These do not exist yet.
