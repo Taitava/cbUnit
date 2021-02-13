@@ -5,7 +5,8 @@ Const cbUnit_TESTS_DIRECTORY = "tests"
 Const cbUnit_TEST_FILE_PATTERN = "test_*.cb"
 Const cbUnit_TEST_PROGRAM_FILE_NAME = "CBCompiler\Editor.out" // Our final test program will be written to this file. CBCompiler.exe expects exactly this file name.
 Const cbUnit_TEST_PROGRAM_OUTPUT_FILE_NAME = "cbUnit.results.txt" // Our final test program will write its test results to this file
-Const cbUnit_TEST_FUNCTION_PATTERN = "*Function test_*(*"
+Const cbUnit_TEST_FUNCTION_PATTERN = "Function test_*(*"
+Const cbUnit_CONSTANT_PATTERN = "Const CBUNIT_*=*"
 Const cbUnit_TEST_MAIN_SKELETON = "test-main.skeleton.cb"
 Const cbUnit_TEST_CALL_SKELETON = "test-call.skeleton.cb"
 
@@ -23,6 +24,12 @@ Type cbUnit_TestFunction
 	Field function_name$
 EndType
 
+Type cbUnit_Setting
+	Field id
+	Field name$
+	Field value$
+EndType
+
 
 GenerateListOfTestFiles()
 
@@ -35,7 +42,7 @@ CloseFile output_file
 
 // Test each test file
 For test_file.cbUnit_TestFile = Each cbUnit_TestFile
-	GenerateListOfTestFunctions(test_file\path) // ScaffoldTestProgram() needs this
+	GenerateListOfTestFunctionsAndConstants(test_file\path) // ScaffoldTestProgram() needs this
 	ScaffoldTestProgram(test_file\path, output_file_path, cbUnit_ApplicationDirectory)
 	
 	// Compile and run the test program
@@ -119,16 +126,28 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 	CloseFile test_program_file
 EndFunction
 
-Function GenerateListOfTestFunctions(test_file_path$)
+Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
 	ResetTestFunctions()
 	test_file = OpenToRead(test_file_path)
 	While Not EOF(test_file)
-		line_$ = ReadLine(test_file)
+		line_$ = Trim(ReadLine(test_file))
 		If PatternCompare(cbUnit_TEST_FUNCTION_PATTERN, line_, False) Then
 			// This Line contains a test_*() Function definition
 			// Mark up that we can call this Function
 			test_function_name$ = Trim(GetBetween(line_, "Function", "(")) // TODO: Fix Case sensitivity problem with the word Function.
 			NewTestFunction(test_function_name)
+			
+		ElseIf PatternCompare(cbUnit_CONSTANT_PATTERN, line_, False) Then
+			// This Line contains a CBUNIT_* constant definition
+			// Mark up the value of it
+			constant_name$ = Trim(GetBetween(line_, "Const", "=")) // TODO: Fix Case sensitivity problem with the word Const.
+			setting_name$ = IReplace(constant_name, "CBUNIT_", "")
+			constant_value$ = Trim(Mid(line_, InStr(line_, "=")+1))
+			If Left(constant_value,1) = Chr(34) Then // Chr(34) is "
+				// Remove quotes
+				constant_value = GetBetween(constant_value, Chr(34), Chr(34))
+			EndIf
+			setSetting(setting_name, constant_value)
 		EndIf
 	Wend
 	CloseFile test_file
@@ -164,6 +183,28 @@ Function NewTestFunction(function_name$)
 	Return test_function\id
 EndFunction
 
+Function setSetting(name$, value$)
+	name = Upper(name)
+	setting.cbUnit_Setting = getSettingInstance(name)
+	If setting = NULL Then setting.cbUnit_Setting = New(cbUnit_Setting)
+	setting\id = ConvertToInteger(setting)
+	setting\name = name
+	setting\value = value
+EndFunction
+
+Function getSetting(name$, if_not_found$="")
+	setting.cbUnit_Setting = getSettingInstance(name)
+	If setting = NULL Then Return if_not_found
+	Return setting\value
+EndFunction
+
+Function getSettingInstance(name$)
+	name = Upper(name)
+	For setting.cbUnit_Setting = Each cbUnit_Setting
+		If setting\name = name Then Return setting\id
+	Next setting
+	Return 0
+EndFunction
 Function ResetTestFunctions()
 	For test_function.cbUnit_TestFunction = Each cbUnit_TestFunction
 		Delete test_function
