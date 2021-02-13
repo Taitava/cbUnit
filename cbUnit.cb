@@ -64,13 +64,18 @@ Function CompileAndRun()
 	
 	// Create a .cmd file that will call the compiler, Wait that it finishes, and then call the test program And Wait that it finishes, And Then Delete a signal file.
 	command_line_parameters$ = getSetting("CommandLine", "")
-	cmd = OpenToWrite("CBCompiler\compiler.cmd")
+	cmd = OpenToWrite("CBCompiler\call_compiler.cmd")
+	WriteLine cmd, "@echo OFF"
+	WriteLine cmd, "echo Preparations..."
 	WriteLine cmd, "cd CBCompiler"
 	WriteLine cmd, "del cbRun.exe" // Should Not exist at this point but try To Delete just in Case
 	WriteLine cmd, "del cbUnitTestProgram.exe" // Should Not exist at this point but try To Delete just in Case
+	WriteLine cmd, "echo Compiling..."
 	WriteLine cmd, "call CBCompiler.exe"
+	WriteLine cmd, "echo Running testing application..."
 	WriteLine cmd, "ren cbRun.exe cbUnitTestProgram.exe"
 	WriteLine cmd, "call cbUnitTestProgram.exe " + command_line_parameters
+	WriteLine cmd, "echo Finishing..."
 	WriteLine cmd, "del cbUnitTestProgram.exe"
 	WriteLine cmd, "del signal"
 	CloseFile cmd
@@ -79,7 +84,7 @@ Function CompileAndRun()
 	CloseFile OpenToWrite("CBCompiler\signal") // The compiler does Not use this file at all
 	
 	// Now we can actually compile & run the program
-	Execute "CBCompiler\compiler.cmd"
+	Execute "CBCompiler\call_compiler.cmd"
 	
 	// Wait Until the program execution is finished
 	While FileExists("CBCompiler\signal")
