@@ -12,8 +12,8 @@ Const CBUNIT_CONSTANT_PATTERN = "Const CBUNIT_*=*"
 Const CBUNIT_TEST_MAIN_SKELETON = "test-main.skeleton.cb"
 Const CBUNIT_TEST_CALL_SKELETON = "test-call.skeleton.cb"
 
-Global cbUnit_Directory$ : cbUnit_Directory = CleanPath(CurrentDir()) // Direcotry of the cbUnit program. Remove trailing slash.
-Global cbUnit_ApplicationDirectory$ : cbUnit_ApplicationDirectory = CleanPath(CurrentDir() + "..\..") // Directory where the testable application lives
+Global cbUnit_StartingDirectory$ : cbUnit_StartingDirectory = CurrentDir()
+Global cbUnit_ApplicationDirectory$ : cbUnit_ApplicationDirectory = CleanPath(cbUnit_StartingDirectory) // Directory where the testable application lives. If cbUnit was started from commandline or via a cmd file, CurrentDir() contains a path to where the call originated.
 Global cbUnit_EOL$ : cbUnit_EOL = Chr(13) + Chr(10)
 Global cbUnit_Quote$ : cbUnit_Quote = Chr(34)
 
@@ -43,12 +43,12 @@ Function MainProgram()
 	GenerateListOfTestFiles()
 	
 	// Reset output log file
-	output_file_path$ = cbUnit_Directory + "\" + CBUNIT_TEST_PROGRAM_OUTPUT_FILE_NAME
+	output_file_path$ = cbUnit_Directory(True) + CBUNIT_TEST_PROGRAM_OUTPUT_FILE_NAME
 	output_file = OpenToWrite(output_file_path)
 	WriteLine output_file, "cbUnit test result " + Date() + " " + Time() + ":"
 	CloseFile output_file
 	
-	// Test each test file
+	// Test Each test file
 	For test_file = Each cbUnit_TestFile
 		GenerateListOfTestFunctionsAndConstants(test_file\path) // ScaffoldTestProgram() needs this
 		ScaffoldTestProgram(test_file\path, output_file_path, cbUnit_ApplicationDirectory)
@@ -62,13 +62,29 @@ Function MainProgram()
 	End
 EndFunction
 
+Function cbUnit_Directory(end_with_backslash=0)
+	Dim path$
+	
+	// Check If cbUnit is currently run from CBEditor
+	If Lower(Right(GetEXEName(), 9)) = "cbrun.exe" Then
+		// cbUnit is currently run from CBEditor, so we cannot use GetEXEName() To determine the application directory because that would lead To the editor's IDE\ folder.
+		// We can use cbUnit_StartingDirectory (= i.e. value of CurrentDir() at the very beginning of this program) because when compiling from CBEditor, CurrentDir() is rarely changed To point anywhere Else than To the application's directory.
+		path = cbUnit_StartingDirectory
+	Else
+		// This is a standalone executable program. Determine the program's directory from GetEXEName(), Not from cbUnit_StartingDirectory, because that may point To a testable host application.
+		path = GetEXEName() // Contains a directory And executable name
+		path + "\.." // Trick CleanPath() To remove the executable name from the path.
+	EndIf
+	Return CleanPath(path, end_with_backslash)
+EndFunction
+
 // Compiling
 Function CompileAndRun()
-	Dim force_variable_declaration, instructions, command_line_parameters$, cmd
+	Dim force_variable_declaration, instructions, command_line_parameters$, cmd, signal_file_path$
 
 	// Write instructions For CBCompiler
 	force_variable_declaration = getSetting("FORCE_VARIABLE_DECLARATION")
-	instructions = OpenToWrite("CBCompiler\Compiler")
+	instructions = OpenToWrite(cbUnit_Directory(True)+"CBCompiler\Compiler")
 	WriteLine instructions, "t"+"ype=1" // 1: We want To build an exe. 0 would mean that we would only want To check syntax.
 	WriteLine instructions, "sourcedir="+cbUnit_ApplicationDirectory+"\" // Application root directory. Include commands in the test_*.cb files rely ON this command.
 	WriteLine instructions, "buildto=cbRun" // changing cbRun To something Else does Not work, the compiler will create a cbRun.exe file any way.
@@ -77,10 +93,10 @@ Function CompileAndRun()
 	
 	// Create a .cmd file that will call the compiler, Wait that it finishes, and then call the test program And Wait that it finishes, And Then Delete a signal file.
 	command_line_parameters$ = getSetting("CommandLine", "")
-	cmd = OpenToWrite("CBCompiler\call_compiler.cmd")
+	cmd = OpenToWrite(cbUnit_Directory(True)+"CBCompiler\call_compiler.cmd")
 	WriteLine cmd, "@echo OFF"
 	WriteLine cmd, "echo Preparations..."
-	WriteLine cmd, "cd CBCompiler"
+	WriteLine cmd, "cd " + cbUnit_Quote + cbUnit_Directory(True)+"CBCompiler" + cbUnit_Quote
 	WriteLine cmd, "del cbRun.exe" // Should Not exist at this point but try To Delete just in Case
 	WriteLine cmd, "del cbUnitTestProgram.exe" // Should Not exist at this point but try To Delete just in Case
 	WriteLine cmd, "echo Compiling..."
@@ -98,13 +114,14 @@ Function CompileAndRun()
 	CloseFile cmd
 	
 	// Signal ourself that the test program is running (actually, will soon be running)
-	CloseFile OpenToWrite("CBCompiler\signal") // The compiler does Not use this file at all
+	signal_file_path = cbUnit_Directory(True)+"CBCompiler\signal"
+	CloseFile OpenToWrite(signal_file_path) // The compiler does Not use this file at all
 	
 	// Now we can actually compile & run the program
-	Execute "CBCompiler\call_compiler.cmd"
+	Execute cbUnit_Directory(True)+"CBCompiler\call_compiler.cmd"
 	
 	// Wait Until the program execution is finished
-	While FileExists("CBCompiler\signal")
+	While FileExists(signal_file_path)
 		Wait(100)
 		// TODO: Break out If the signal file is stuck Forever.
 	Wend
@@ -118,7 +135,7 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 	Dim test_function.cbUnit_TestFunction
 
 	// Prepare a helper skeleton For test function calls (we will modify it later)
-	call_skeleton_file = OpenToRead(CBUNIT_TEST_CALL_SKELETON)
+	call_skeleton_file = OpenToRead(cbUnit_Directory(True)+CBUNIT_TEST_CALL_SKELETON)
 	call_skeleton$ = ""
 	While Not EOF(call_skeleton_file)
 		call_skeleton = call_skeleton + ReadLine(call_skeleton_file) + cbUnit_EOL
@@ -126,7 +143,7 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 	CloseFile call_skeleton_file
 	
 	// Prepare Write destination
-	test_program_file = OpenToWrite(CBUNIT_TEST_PROGRAM_FILE_NAME)
+	test_program_file = OpenToWrite(cbUnit_Directory(True)+CBUNIT_TEST_PROGRAM_FILE_NAME)
 	
 	// Write runtime settings that are Not present in the test_*.cb file
 	runtime_setting_definitions = EnsureRuntimeSettingsAreDefined()
@@ -137,7 +154,7 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 	EndIf
 	
 	// Main skeleton
-	main_skeleton_file = OpenToRead(CBUNIT_TEST_MAIN_SKELETON)
+	main_skeleton_file = OpenToRead(cbUnit_Directory(True)+CBUNIT_TEST_MAIN_SKELETON)
 	While Not EOF(main_skeleton_file)
 		line_$ = ReadLine(main_skeleton_file)
 		If "// INSERT TEST CALLS HERE //" = line_ Then
@@ -152,7 +169,7 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 			line_ = IReplace(line_, "@test_file_path", test_file_path)
 			line_ = IReplace(line_, "@output_file_path", output_file_path)
 			line_ = IReplace(line_, "@application_directory", application_directory)
-			line_ = IReplace(line_, "@cbunit_directory", cbUnit_Directory)
+			line_ = IReplace(line_, "@cbunit_directory", cbUnit_Directory())
 			WriteLine test_program_file, line_
 		EndIf
 	Wend
@@ -212,8 +229,9 @@ Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
 EndFunction
 
 Function GenerateListOfTestFiles()
-	Dim tests_directory_path$, file_name$
+	Dim old_directory$, tests_directory_path$, file_name$
 	
+	old_directory = CurrentDir()
 	tests_directory_path$ = cbUnit_ApplicationDirectory + "\" + CBUNIT_TESTS_DIRECTORY
 	If Not IsDirectory(tests_directory_path) Then Return HandleError("getListOfTestFiles", "Directory "+tests_directory_path+" does n"+"ot exist.")
 	ChDir tests_directory_path
@@ -226,7 +244,7 @@ Function GenerateListOfTestFiles()
 		EndIf
 	Until "" = file_name
 	EndSearch
-	ChDir cbUnit_Directory
+	ChDir old_directory
 EndFunction
 
 // Type handling

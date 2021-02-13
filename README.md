@@ -13,15 +13,14 @@ You need to have a CoolBasic compiler (`CBCompiler.exe`) on your computer. We wi
 - The official compiler (has a limit of 127 functions). [Download IDE installer here](https://www.coolbasic.com/files/CBBeta10.exe) (contains also editor & manual) [More information (briefly in English)](https://www.coolbasic.com/)
 
 ### 1. Download cbUnit
-Say that you have a CB project application located somewhere on your computer, e.g. *C:\\Program Files (x86)\\CoolBasic\\Projects\\MyApplication*.
+You can install cbUnit anywhere on your computer, but it's recommended to place it in the same folder with your CoolBasic editor (*CBEditor*), in a subfolder named `cbUnit`. So if you have installed CoolBasic to for example *C:\\Program Files (x86)\\CoolBasic\\*, you could install cbUnit to *C:\\Program Files (x86)\\CoolBasic\\cbUnit\\*.
 
-1. In that directory, create a folder `tests` and under that another folder called `cbUnit`. So it will be something like *C:\\Program Files (x86)\\CoolBasic\\Projects\\MyApplication\\tests\\cbUnit*.  cbUnit is meant to be downloaded into that folder.
-2. You can either:
-	 - Go to the above mentioned folder using [Git Bash](https://gitforwindows.org/) and execute: `git clone https://github.com/Taitava/cbUnit.git .`
-	 - **or** download a zip archive from [releases](https://github.com/Taitava/cbUnit/releases) or [latest source code](https://github.com/Taitava/cbUnit/archive/master.zip) and unzip it to the above mentioned folder.
+To download cbUnit, you can either:
+	 - Go to your *CoolBasic* folder using [Git Bash](https://gitforwindows.org/) and execute: `git clone https://github.com/Taitava/cbUnit.git cbUnit`. This will create a `cbUnit` folder for you and download cbUnit there.
+	 - **or** download a zip archive from [releases](https://github.com/Taitava/cbUnit/releases) or [latest source code](https://github.com/Taitava/cbUnit/archive/master.zip) and unzip it to a new `cbUnit` folder.
 
 ### 2. Copy `CBCompiler.exe` to cbUnit
-Locate your `CBCompiler.exe` file and **copy** it to `cbUnit\CBCompiler` folder, which is sad and lonely, waiting for the compiler to arrive.
+Locate your `CBCompiler.exe` file from your `CoolBasic\IDE` folder and **copy** it to `cbUnit\CBCompiler` folder, which is sad and lonely, waiting for the compiler to arrive.
 
 cbUnit needs CBCompiler because it generates some simple testing framework code and builds it with your custom `test_*.cb` unit test files. We will also use the compiler to compile cbUnit's main program in the next step.
 
@@ -34,6 +33,8 @@ If you happen to make some changes to `cbUnit.cb` source code file, then you can
 The installation is now done.
 
 ## Creating `test_*.cb` files
+Let's assume that you have a CB project application located somewhere on your computer, e.g. *C:\\Program Files (x86)\\CoolBasic\\Projects\\MyApplication*. In that directory, create a folder named `tests` . So it will be something like *C:\\Program Files (x86)\\CoolBasic\\Projects\\MyApplication\\tests\\*. 
+
 Say that you have your `MyApplication` divided into multiple source code files, and you want to write some tests for each one of them. A good practice is to create one test file per one application source code file. You could have e.g.:
 - `MyApplication\MainProgram.cb` and `MyApplication\tests\test_MainProgram.cb`
 - `MyApplication\LibraryFunctions.cb` and `MyApplication\tests\test_LibraryFunctions.cb`
@@ -78,9 +79,10 @@ EndFunction
 
 ## Running tests
 Running tests is really simple:
-1. Just run `MyApplication\tests\cbUnit\cbUnit.exe`.
-2. cbUnit will read all your `tests\test_*.cb` files. Each one will be compiled and run **one at a time**. Multiple test files are **not** compiled into one program! So different test files can define similarly named functions, variables etc.
-3. After executing all test files, cbUnit will open a report text file in your favorite text editor and quit.
+1. If you have not already done so, in your application's root folder, create a file named `cbUnit.cmd`  (or you can decide another name for it if you wish). Edit it and add the following line: `start "cbUnit" "C:\Program Files (x86)\CoolBasic\cbUnit\cbUnit.exe"` (or whatever is the path to your *CoolBasic* directory). This *.cmd*-file works now as your link to start cbUnit.
+2. Run `cbUnit.cmd`. cbUnit will automatically know in which folder the calling `cbUnit.cmd` file resides and starts to test that application.
+3. cbUnit will read all your `tests\test_*.cb` files. Each one will be compiled and run **one at a time**. Multiple test files are **not** compiled into one program! So different test files can define similarly named functions, variables etc.
+4. After executing all test files, cbUnit will open a report text file in your favorite text editor and quit.
 
 There is currently no way to select which test file(s) will be run. cbUnit runs all of them, but this may change in the future.
 
