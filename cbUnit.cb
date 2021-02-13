@@ -15,6 +15,7 @@ Const CBUNIT_TEST_CALL_SKELETON = "test-call.skeleton.cb"
 Global cbUnit_Directory$ : cbUnit_Directory = CleanPath(CurrentDir()) // Direcotry of the cbUnit program. Remove trailing slash.
 Global cbUnit_ApplicationDirectory$ : cbUnit_ApplicationDirectory = CleanPath(CurrentDir() + "..\..") // Directory where the testable application lives
 Global cbUnit_EOL$ : cbUnit_EOL = Chr(13) + Chr(10)
+Global cbUnit_Quote$ : cbUnit_Quote = Chr(34)
 
 // Types
 Type cbUnit_TestFile
@@ -31,6 +32,7 @@ Type cbUnit_Setting
 	Field id
 	Field name$
 	Field value$
+	Field source$
 EndType
 
 // Main program
@@ -62,14 +64,15 @@ EndFunction
 
 // Compiling
 Function CompileAndRun()
-	Dim instructions, command_line_parameters$, cmd
+	Dim force_variable_declaration, instructions, command_line_parameters$, cmd
 
 	// Write instructions For CBCompiler
+	force_variable_declaration = getSetting("FORCE_VARIABLE_DECLARATION")
 	instructions = OpenToWrite("CBCompiler\Compiler")
 	WriteLine instructions, "t"+"ype=1" // 1: We want To build an exe. 0 would mean that we would only want To check syntax.
 	WriteLine instructions, "sourcedir="+cbUnit_ApplicationDirectory+"\" // Application root directory. Include commands in the test_*.cb files rely ON this command.
 	WriteLine instructions, "buildto=cbRun" // changing cbRun To something Else does Not work, the compiler will create a cbRun.exe file any way.
-	WriteLine instructions, "force=0" // Can be used To turn Force Variable Declaraction ON. Could be an interesting option To offer at some point.
+	WriteLine instructions, "force=" + force_variable_declaration // 1: turn Force Variable Declaraction ON. 0: turn it OFF.
 	CloseFile instructions
 	
 	// Create a .cmd file that will call the compiler, Wait that it finishes, and then call the test program And Wait that it finishes, And Then Delete a signal file.
@@ -111,7 +114,7 @@ EndFunction
 
 // Generators / Scaffolders
 Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_directory$)
-	Dim call_skeleton_file, call_skeleton$, test_program_file, main_skeleton_file, line_$, call$
+	Dim call_skeleton_file, call_skeleton$, test_program_file, runtime_setting_definitions$, main_skeleton_file, line_$, call$
 	Dim test_function.cbUnit_TestFunction
 
 	// Prepare a helper skeleton For test function calls (we will modify it later)
@@ -124,6 +127,14 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 	
 	// Prepare Write destination
 	test_program_file = OpenToWrite(CBUNIT_TEST_PROGRAM_FILE_NAME)
+	
+	// Write runtime settings that are Not present in the test_*.cb file
+	runtime_setting_definitions = EnsureRuntimeSettingsAreDefined()
+	If runtime_setting_definitions Then
+		WriteLine test_program_file, "// Define runtime settings with d"+"efault values:"
+		WriteLine test_program_file, runtime_setting_definitions
+		WriteLine test_program_file, ""
+	EndIf
 	
 	// Main skeleton
 	main_skeleton_file = OpenToRead(CBUNIT_TEST_MAIN_SKELETON)
@@ -150,6 +161,27 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 	CloseFile test_program_file
 EndFunction
 
+// Returns a string of constants that are not defined in the current test_*.cb file.
+Function EnsureRuntimeSettingsAreDefined()
+	Dim setting_definitions$, runtime_settings$, i, runtime_setting$, runtime_setting_key$, runtime_setting_value$, runtime_setting_default_value$
+	Dim setting.cbUnit_Setting
+	
+	// Define settings And Default values. Separate settings from each other by commas, And setting keys And values by equal sign.
+	runtime_settings = "STOP_AT="
+	setting_definitions = ""
+	For i = 1 To CountWords2(runtime_settings, ",")
+		runtime_setting = GetWord2(runtime_settings, i, ",") // E.g. STOP_AT
+		runtime_setting_key = GetWord2(runtime_setting, 1, "=")
+		runtime_setting_default_value = GetWord2(runtime_setting, 2, "=")
+		If Not isSettingDefinedInTest(runtime_setting_key) Then
+			runtime_setting_value = getSetting(runtime_setting_key, runtime_setting_default_value) // Use getSetting() To try To find a setting from another source, even though it's Not defined in a test source. If that fails, Then use the Default value.
+			setting_definitions = setting_definitions + "Const CBUNIT_"+runtime_setting_key+" = " + cbUnit_Quote + runtime_setting_value + cbUnit_Quote + cbUnit_EOL
+		EndIf
+	Next i
+	
+	Return setting_definitions
+EndFunction
+
 Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
 	Dim test_file, line_$, test_function_name$, constant_name$, setting_name$, constant_value$
 
@@ -173,7 +205,7 @@ Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
 				// Remove quotes
 				constant_value = GetBetween(constant_value, Chr(34), Chr(34))
 			EndIf
-			setSetting(setting_name, constant_value)
+			setSetting(setting_name, constant_value, "test")
 		EndIf
 	Wend
 	CloseFile test_file
@@ -225,7 +257,8 @@ Function ResetTestFunctions()
 EndFunction
 
 // Settings
-Function setSetting(name$, value$)
+// source: "test" if the setting was set via a constant in a test_*.cb file. Currently there are no other source possibilities, but might be in the future.
+Function setSetting(name$, value$, source$)
 	Dim setting.cbUnit_Setting
 	
 	name = Upper(name)
@@ -234,6 +267,7 @@ Function setSetting(name$, value$)
 	setting\id = ConvertToInteger(setting)
 	setting\name = name
 	setting\value = value
+	setting\source = source // Even If the setting was already loaded from another source, update here the latest source information.
 EndFunction
 
 Function getSetting(name$, if_not_found$="")
@@ -252,6 +286,17 @@ Function getSettingInstance(name$)
 		If setting\name = name Then Return setting\id
 	Next setting
 	Return 0
+EndFunction
+
+// Tells if a certain setting is defined as a constant in the current test_*.cb file. This information is needed to be able to declare those constants automatically in case if they are not defined in the test file. Otherwise FVD will break and handling default values for runtime settings would be difficult.
+Function isSettingDefinedInTest(name$)
+	Dim setting.cbUnit_Setting
+	
+	setting = getSettingInstance(name)
+	If NULL <> setting Then
+		Return setting\source = "test"
+	EndIf
+	Return False
 EndFunction
 
 // Error handling

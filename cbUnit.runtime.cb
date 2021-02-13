@@ -24,7 +24,9 @@ EndType
 //
 
 Function cbUnit_GetApplication()
-	app.cbUnit_Application = First(cbUnit_Application)
+	Dim app.cbUnit_Application
+	
+	app = First(cbUnit_Application)
 	If NULL = app Then
 		app = New(cbUnit_Application)
 		app\id = ConvertToInteger(app)
@@ -33,13 +35,17 @@ Function cbUnit_GetApplication()
 EndFunction
 
 Function cbUnit_SetCurrentContext(current_context$)
-	app.cbUnit_Application = cbUnit_GetApplication()
+	Dim app.cbUnit_Application
+	
+	app = cbUnit_GetApplication()
 	app\current_context = current_context
 EndFunction
 
 Function cbUnit_Fail(message$)
-	app.cbUnit_Application = cbUnit_GetApplication()
-	failure.cbUnit_Failure = New(cbUnit_failure)
+	Dim app.cbUnit_Application, failure.cbUnit_Failure
+	
+	app = cbUnit_GetApplication()
+	failure = New(cbUnit_failure)
 	failure\id = ConvertToInteger(failure)
 	failure\context = app\current_context
 	failure\message = message
@@ -53,19 +59,24 @@ Function cbUnit_Substitute(message$, a$, b$="", c$="")
 EndFunction
 
 Function cbUnit_HasFailures()
-	app.cbUnit_Application = cbunit_GetApplication()
+	Dim app.cbUnit_Application
+	
+	app = cbunit_GetApplication()
 	Return app\count_failures > 0
 EndFunction
 
 Function cbUnit_EndProgram()
-	cbUnit_WriteResults(CBUNIT_OUTPUT_FILE_PATH, CBUNIT_TEST_FILE_PATH)
+	cbUnit_WriteResults(CBUNIT_OUTPUT_FILE_PATH, CBUNIT_TEST_FILE_PATH) // These constants are defined in either test_*.cb files, Or If Not present there, cbUnit.cb inserts them To the compilable program.
 	End
 EndFunction
 
 Function cbUnit_WriteResults(output_file_path$, test_file_path$)
+	Dim output_file
+	Dim app.cbUnit_Application, failure.cbUnit_Failure
+	
 	output_file = OpenToEdit(output_file_path$)
 	SeekFile output_file, FileSize(output_file_path)
-	app.cbUnit_Application = cbUnit_GetApplication()
+	app = cbUnit_GetApplication()
 	WriteLine output_file, ""
 	WriteLine output_file, test_file_path+":"
 	WriteLine output_file, "  " + app\count_tests + " total tests."

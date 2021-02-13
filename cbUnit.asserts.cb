@@ -4,7 +4,9 @@
 //
 
 Function Assert(condition, message$="Assertion condition is false.")
-	app.cbUnit_Application = cbUnit_GetApplication()
+	Dim app.cbUnit_Application
+	
+	app = cbUnit_GetApplication()
 	app\count_tests = app\count_tests + 1
 	If condition Then
 		// Test succeeded
@@ -95,6 +97,8 @@ EndFunction
 // b: The assumed sign, either -1 or 1. Or in some cases 0, but then a is supposed to be zero too, so then you could be using AssertZero(a) instead.
 // zero_sign: If a happens to be zero, this determines the sign for it, because it might depend on case, which sign we want to use for zero. Defaults to 0.
 Function AssertSign(a#,b, zero_sign=0, message$="The sign of number a$ should be b$, but it is c$.")
+	Dim sign
+	
 	If a = 0 Then
 		sign = zero_sign
 	Else
@@ -116,6 +120,8 @@ Function AssertFloat(a$, message$="a$ should be a float.")
 EndFunction
 
 Function AssertIntegerOrFloat(a$, message$="a$ should be an integer or a float.")
+	Dim is_integer, is_float
+	
 	is_integer = Str(Int(a)) = a
 	is_float = Str(Float(a)) = a
 	Assert(is_integer Or is_float, cbUnit_Substitute(message, a))
