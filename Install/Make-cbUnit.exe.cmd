@@ -27,7 +27,7 @@ rem Write a new compiler instructions file
 echo type=1 > Compiler
 echo sourcedir=%cbUnitDirectory%\ >> Compiler
 echo buildTo=cbRun >> Compiler
-echo force=0 >> Compiler
+echo force=1 >> Compiler
 
 rem Write new source code file
 copy ..\cbUnit.cb Editor.out > nul
