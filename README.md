@@ -89,9 +89,9 @@ There is currently no way to select which test file(s) will be run. cbUnit runs 
 
 Setting | Possible values | Description 
 --------|-----------------|-------------
-CBUNIT_COMMANDLINE | (any string) | This string will be available via CommandLine() in your application and test file. cbUnit.exe reads this from your test_*.cb file and uses it when executing that file. That's why it may seem strange how this setting works.
+CBUNIT_COMMANDLINE | (any string) Default: `""` (an empty string) | This string will be available via CommandLine() in your application and test file. cbUnit.exe reads this from your test_*.cb file and uses it when executing that file. That's why it may seem strange how this setting works.
 CBUNIT_FORCE_VARIABLE_DECLARATION | `0` or `1`. Default: `0` | Whether to use the CBCompiler's FVD option to require that all variables used in the program should be predefined (e.g. with `Dim`) before usage. Very powerful for preventing bugs caused by typos in variable names, but in addition to the fact that your test files need to adhere to FVD, also your whole application needs to adhere to it.
-CBUNIT_STOP_AT | "ASSERT", "FUNCTION", "" | Defines how failures are tolerated. ASSERT: Prevent further test immediately when an assertation fails. FUNCTION: When an assertation fails, complete the current test_*() function but stop after that. "" or anything else: do not stop (default behaviour). Note that this setting does not prevent the test program from executing other test_*.cb files!
+CBUNIT_STOP_AT | `"ASSERT"`, `"FUNCTION"`, `""` <br> Default: `""` (an empty string) | Defines how failures are tolerated. ASSERT: Prevent further test immediately when an assertation fails. FUNCTION: When an assertation fails, complete the current test_*() function but stop after that. "" or anything else: do not stop (default behaviour). Note that this setting does not prevent the test program from executing other test_*.cb files!
 
 ### Application's global settings
 These do not exist yet.
