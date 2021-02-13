@@ -10,8 +10,9 @@ Const CBUNIT_TEST_FILE_PATH = "@test_file_path"
 
 ChDir "@application_directory"
 
-// Include basic assertion related tool functions
-Include "@cbunit_directory\cbUnit-asserts.cb"
+// Include runtime test handling tools & basic assertion related tools
+Include "@cbunit_directory\cbUnit.runtime.cb"
+Include "@cbunit_directory\cbUnit.asserts.cb"
 
 // Include the user-defined test file
 Include "@test_file_path"
