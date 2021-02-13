@@ -33,6 +33,48 @@ If you happen to make some changes to `cbUnit.cb` source code file, then you can
 
 The installation is now done.
 
+## Creating `test_*.cb` files
+Say that you have your `MyApplication` divided into multiple source code files, and you want to write some tests for each one of them. A good practice is to create one test file per one application source code file. You could have e.g.:
+- `MyApplication\MainProgram.cb` and `MyApplication\tests\test_MainProgram.cb`
+- `MyApplication\LibraryFunctions.cb` and `MyApplication\tests\test_LibraryFunctions.cb`
+
+However, cbUnit does not force you to use any strict pattern to link your source code and test files together. The only rules for your test files are:
+- Test files must be located in `tests` folder (no case-sensitivity).
+- Test files' names need to start with `test_` and end with `.cb` (no case-sensitivity). A good practice is to include the related source code file's name in the test file's name, like in the examples above.
+
+cbUnit *does* read your test files, but it *never* reads your application's source code files. And it never includes them for you, so in each of your `test_*.cb` file, you will need to `Include` the application source code file(s) that you want to test in that particular test file. cbUnit *does* include its own utility functions for you, so you don't need to include anything related to cbUnit in your `test_*.cb` files. You can just directly use [all the *assert* functions provided by cbUnit](https://github.com/Taitava/cbUnit/blob/master/cbUnit.asserts.cb).
+
+### Content of a `test_*.cb` file
+cbUnit assumes that each of your `test_*.cb` file contains functions and does not do anything outside of them. Of course you can use includes and define variables etc. outside of functions like you normally do. But code logic is *encouraged* to be written in functions. There is no strict rule for this, as cbUnit does not guard this in any way, but it can better report *assertion failures* if you use functions.
+
+Functions in a `test_*.cb` file have the following rules:
+- If a function is named `test_*()` (e.g.: `Function test_LoadGraphics()`), cbUnit will call it automatically. You do not need to call them at any point!
+- `test_*()` functions do not use any parameters at the moment.
+- If a function does not have the `test_` prefix, cbUnit will not call it. You can have this kind of functions in your test files freely, and you call them yourself just like you would expect.
+
+Each function should contain *assertation tests*:
+ - Your function should call one or more of `Assert*()` functions. Each one of them checks if the condition you gave them *is true*. E.g. `AssertBeginsWith("Hello World!", "Hello")` succeeds, but `AssertBeginsWith("Hello World!", "Hi")` fails and writes a report of the failure. Failures may also prevent further assertation tests from being run, depending on [your settings](#Settings).
+ - You can find [all possible *assert* functions here](https://github.com/Taitava/cbUnit/blob/master/cbUnit.asserts.cb)
+ - Each assert function has it's own set of parameters, but all of them follow a general principle: the parameters start with one or more test condition operands (some might be optional), and the last parameter is always an optional message that will be included in the test report *if* the assertation fails. (If you do not specify a message, each assert function has their own, generic purpose default message, which should be descriptive enough for most cases.)
+ - If you cannot find a specific assert function tailored for your particular test condition, you can always use the base `Assert(condition, message$="Assertion condition is false.")` assert function. The first parameter is your condition as a simple `True` or `False` value (whether it succeeded or not). A downside to this function is that its default failure message is very ambiguous, so it's recommended that you write a more detailed one.
+
+#### Example content of a `test_*.cb` file
+This example assumes that we have a `LibraryFunctions.cb` file containing e.g. [`GetWord2()` and `CountWords2()`](http://www.cbrepository.com/codes/code/11/) functions.
+`MyApplication\tests\test_LibraryFunctions.cb`:
+```Basic
+
+Include "LibraryFunctions.cb"
+
+Function test_GetWord2()
+	AssertEquals(GetWord2("Tämä on lause.", 2), "on")
+EndFunction
+
+function test_CountWords2()
+	AssertEquals(CountWords2("Hi my name is Jarkko."), 5)
+	AssertEquals(CountWords2("Hi-my-name-is-Jarkko.", "-"), 5)
+EndFunction
+
+```
 ## Settings
 ### In test_*.cb files
 
