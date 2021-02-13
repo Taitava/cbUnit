@@ -3,14 +3,14 @@
 Include "cbRepository.com.cb"
 
 // Constants and globals
-Const cbUnit_TESTS_DIRECTORY = "tests"
-Const cbUnit_TEST_FILE_PATTERN = "test_*.cb"
-Const cbUnit_TEST_PROGRAM_FILE_NAME = "CBCompiler\Editor.out" // Our final test program will be written to this file. CBCompiler.exe expects exactly this file name.
-Const cbUnit_TEST_PROGRAM_OUTPUT_FILE_NAME = "cbUnit.results.txt" // Our final test program will write its test results to this file
-Const cbUnit_TEST_FUNCTION_PATTERN = "Function test_*(*"
-Const cbUnit_CONSTANT_PATTERN = "Const CBUNIT_*=*"
-Const cbUnit_TEST_MAIN_SKELETON = "test-main.skeleton.cb"
-Const cbUnit_TEST_CALL_SKELETON = "test-call.skeleton.cb"
+Const CBUNIT_TESTS_DIRECTORY = "tests"
+Const CBUNIT_TEST_FILE_PATTERN = "test_*.cb"
+Const CBUNIT_TEST_PROGRAM_FILE_NAME = "CBCompiler\Editor.out" // Our final test program will be written to this file. CBCompiler.exe expects exactly this file name.
+Const CBUNIT_TEST_PROGRAM_OUTPUT_FILE_NAME = "cbUnit.results.txt" // Our final test program will write its test results to this file
+Const CBUNIT_TEST_FUNCTION_PATTERN = "Function test_*(*"
+Const CBUNIT_CONSTANT_PATTERN = "Const CBUNIT_*=*"
+Const CBUNIT_TEST_MAIN_SKELETON = "test-main.skeleton.cb"
+Const CBUNIT_TEST_CALL_SKELETON = "test-call.skeleton.cb"
 
 Global cbUnit_Directory$ : cbUnit_Directory = CleanPath(CurrentDir()) // Direcotry of the cbUnit program. Remove trailing slash.
 Global cbUnit_ApplicationDirectory$ : cbUnit_ApplicationDirectory = CleanPath(CurrentDir() + "..\..") // Directory where the testable application lives
@@ -38,7 +38,7 @@ Function MainProgram()
 	GenerateListOfTestFiles()
 	
 	// Reset output log file
-	output_file_path$ = cbUnit_Directory + "\" + cbUnit_TEST_PROGRAM_OUTPUT_FILE_NAME
+	output_file_path$ = cbUnit_Directory + "\" + CBUNIT_TEST_PROGRAM_OUTPUT_FILE_NAME
 	output_file = OpenToWrite(output_file_path)
 	WriteLine output_file, "cbUnit test result " + Date() + " " + Time() + ":"
 	CloseFile output_file
@@ -107,7 +107,7 @@ EndFunction
 // Generators / Scaffolders
 Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_directory$)
 	// Prepare a helper skeleton For test function calls (we will modify it later)
-	call_skeleton_file = OpenToRead(cbUnit_TEST_CALL_SKELETON)
+	call_skeleton_file = OpenToRead(CBUNIT_TEST_CALL_SKELETON)
 	call_skeleton$ = ""
 	While Not EOF(call_skeleton_file)
 		call_skeleton = call_skeleton + ReadLine(call_skeleton_file) + cbUnit_EOL
@@ -115,10 +115,10 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 	CloseFile call_skeleton_file
 	
 	// Prepare Write destination
-	test_program_file = OpenToWrite(cbUnit_TEST_PROGRAM_FILE_NAME)
+	test_program_file = OpenToWrite(CBUNIT_TEST_PROGRAM_FILE_NAME)
 	
 	// Main skeleton
-	main_skeleton_file = OpenToRead(cbUnit_TEST_MAIN_SKELETON)
+	main_skeleton_file = OpenToRead(CBUNIT_TEST_MAIN_SKELETON)
 	While Not EOF(main_skeleton_file)
 		line_$ = ReadLine(main_skeleton_file)
 		If "// INSERT TEST CALLS HERE //" = line_ Then
@@ -147,13 +147,13 @@ Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
 	test_file = OpenToRead(test_file_path)
 	While Not EOF(test_file)
 		line_$ = Trim(ReadLine(test_file))
-		If PatternCompare(cbUnit_TEST_FUNCTION_PATTERN, line_, False) Then
+		If PatternCompare(CBUNIT_TEST_FUNCTION_PATTERN, line_, False) Then
 			// This Line contains a test_*() Function definition
 			// Mark up that we can call this Function
 			test_function_name$ = Trim(GetBetween(line_, "Function", "(")) // TODO: Fix Case sensitivity problem with the word Function.
 			NewTestFunction(test_function_name)
 			
-		ElseIf PatternCompare(cbUnit_CONSTANT_PATTERN, line_, False) Then
+		ElseIf PatternCompare(CBUNIT_CONSTANT_PATTERN, line_, False) Then
 			// This Line contains a CBUNIT_* constant definition
 			// Mark up the value of it
 			constant_name$ = Trim(GetBetween(line_, "Const", "=")) // TODO: Fix Case sensitivity problem with the word Const.
@@ -170,13 +170,13 @@ Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
 EndFunction
 
 Function GenerateListOfTestFiles()
-	tests_directory_path$  = cbUnit_ApplicationDirectory + "\" + cbUnit_TESTS_DIRECTORY
+	tests_directory_path$  = cbUnit_ApplicationDirectory + "\" + CBUNIT_TESTS_DIRECTORY
 	If Not IsDirectory(tests_directory_path) Then Return HandleError("getListOfTestFiles", "Directory "+tests_directory_path+" does n"+"ot exist.")
 	ChDir tests_directory_path
 	StartSearch
 	Repeat
 		file_name$ = FindFile()
-		If PatternCompare(cbUnit_TEST_FILE_PATTERN, file_name, False, "*") Then
+		If PatternCompare(CBUNIT_TEST_FILE_PATTERN, file_name, False, "*") Then
 			// This is a test_*.cb file
 			NewTestFile(tests_directory_path + "\" + file_name)
 		EndIf
