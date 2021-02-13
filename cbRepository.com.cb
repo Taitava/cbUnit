@@ -2,8 +2,10 @@
 
 // Copied 2021-02-12 from http://www.cbrepository.com/codes/code/87/
 // Created 2013-09-20 by Jare
-// Modifications: none
+// Modifications: Made the function FVD compatible
 Function PatternCompare(pattern$, compare$, case_sensitive=1, wildcard$="*", escape$="\")
+	Dim position, count_bits, i, bit$ // Force Variable Declaration
+	
     position = 1
     If Not case_sensitive Then
         pattern = Lower(pattern)
@@ -29,8 +31,10 @@ EndFunction
 
 // Copied 2021-02-12 from http://www.cbrepository.com/codes/code/94/
 // Created 2014-12-26 by Jare
-// Modifications: none
+// Modifications: Made the function FVD compatible
 Function IReplace(haystack$, find$, replace_$)
+	Dim haystack2$, position, result$, old_position // Force Variable Declaration
+	
 	haystack2$	= Lower(haystack)
 	find		= Lower(find)
 	position	= InStr(haystack2, find)
@@ -48,8 +52,10 @@ EndFunction
 
 // Copied 2021-02-12 http://www.cbrepository.com/codes/code/93/
 // Created 2014-12-25 by Jare
-// Modifications: none
+// Modifications: Made the function FVD compatible
 Function GetBetween$(haystack$, start$, stop$, notfound$="")
+	Dim a, b // Force Variable Declaration
+	
 	a = InStr(haystack, start)
 	b = InStr(haystack, stop, a+1)
 	If a = 0 Or b = 0 Then Return notfound
@@ -59,8 +65,12 @@ EndFunction
 
 // Copied 2021-02-12 from http://www.cbrepository.com/codes/code/11/
 // Created 2011-04-09 by KilledWhale
-// Modifications: added $ to the GetWord2() function name. No other modifications
+// Modifications:
+//  - added $ to the GetWord2() function name. No other modifications
+//  - Made the function FVD compatible
 Function GetWord2$(a As String, b As Integer, c As String)
+   Dim l, i, q // Force Variable Declaration
+   
    l = Len(c) // Otetaan pituus muuttujaan optimoinniksi
 	For i As Integer = 2 To b // Käydään läpi kaikki ei-halutut sanat
 	  q = InStr(a, c) // Katsotaan löytyykö erotinta
@@ -77,7 +87,12 @@ Function GetWord2$(a As String, b As Integer, c As String)
 	EndIf
 EndFunction
 
+// Copied 2021-02-12 from http://www.cbrepository.com/codes/code/11/
+// Created 2011-04-09 by KilledWhale
+// Modifications: Made the function FVD compatible
 Function CountWords2(a As String, c As String)
+   Dim n, aa // Force Variable Declaration
+   
    Repeat
 	  n + 1 // Kasvatetaan arvoa, että montako ON löydetty
 	  aa = InStr(a, c, aa + 1) // Katsotaan löytyykö erotinta
@@ -90,6 +105,7 @@ EndFunction
 
 
 // Saved 2021-02-13 to http://www.cbrepository.com/codes/code/104/ (the same time that I wrote it in this file)
+// Modifications: Made the function FVD compatible
 //
 // Does the following cleanups to the given path:
 // - Resolves .. in directory paths (if possible)
@@ -97,6 +113,8 @@ EndFunction
 // - Converts double \\ to \
 // The second parameter is used to determine whether you want the path to end with a backslash or not (True/False).
 Function CleanPath(path$, end_with_backslash=0)
+	Dim position, path_start$, path_end$, i, character$ // Force Variable Declaration
+	
 	path = Replace(path, "/", "\")
 	path = Replace(path, "\\", "\")
 	

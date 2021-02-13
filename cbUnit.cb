@@ -35,6 +35,9 @@ EndType
 
 // Main program
 Function MainProgram()
+	Dim output_file_path$, output_file
+	Dim test_file.cbUnit_TestFile
+	
 	GenerateListOfTestFiles()
 	
 	// Reset output log file
@@ -44,7 +47,7 @@ Function MainProgram()
 	CloseFile output_file
 	
 	// Test each test file
-	For test_file.cbUnit_TestFile = Each cbUnit_TestFile
+	For test_file = Each cbUnit_TestFile
 		GenerateListOfTestFunctionsAndConstants(test_file\path) // ScaffoldTestProgram() needs this
 		ScaffoldTestProgram(test_file\path, output_file_path, cbUnit_ApplicationDirectory)
 		
@@ -59,6 +62,8 @@ EndFunction
 
 // Compiling
 Function CompileAndRun()
+	Dim instructions, command_line_parameters$, cmd
+
 	// Write instructions For CBCompiler
 	instructions = OpenToWrite("CBCompiler\Compiler")
 	WriteLine instructions, "t"+"ype=1" // 1: We want To build an exe. 0 would mean that we would only want To check syntax.
@@ -106,6 +111,9 @@ EndFunction
 
 // Generators / Scaffolders
 Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_directory$)
+	Dim call_skeleton_file, call_skeleton$, test_program_file, main_skeleton_file, line_$, call$
+	Dim test_function.cbUnit_TestFunction
+
 	// Prepare a helper skeleton For test function calls (we will modify it later)
 	call_skeleton_file = OpenToRead(CBUNIT_TEST_CALL_SKELETON)
 	call_skeleton$ = ""
@@ -123,7 +131,7 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 		line_$ = ReadLine(main_skeleton_file)
 		If "// INSERT TEST CALLS HERE //" = line_ Then
 			// This is a mark that we should Insert test Function calls here
-			For test_function.cbUnit_TestFunction = Each cbUnit_TestFunction
+			For test_function = Each cbUnit_TestFunction
 				call$ = call_skeleton
 				call = IReplace(call, "@test_function_name", test_function\function_name)
 				WriteLine test_program_file, call
@@ -143,6 +151,8 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 EndFunction
 
 Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
+	Dim test_file, line_$, test_function_name$, constant_name$, setting_name$, constant_value$
+
 	ResetTestFunctions()
 	test_file = OpenToRead(test_file_path)
 	While Not EOF(test_file)
@@ -170,7 +180,9 @@ Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
 EndFunction
 
 Function GenerateListOfTestFiles()
-	tests_directory_path$  = cbUnit_ApplicationDirectory + "\" + CBUNIT_TESTS_DIRECTORY
+	Dim tests_directory_path$, file_name$
+	
+	tests_directory_path$ = cbUnit_ApplicationDirectory + "\" + CBUNIT_TESTS_DIRECTORY
 	If Not IsDirectory(tests_directory_path) Then Return HandleError("getListOfTestFiles", "Directory "+tests_directory_path+" does n"+"ot exist.")
 	ChDir tests_directory_path
 	StartSearch
@@ -187,29 +199,37 @@ EndFunction
 
 // Type handling
 Function NewTestFile(path$)
-	test_file.cbUnit_TestFile = New(cbUnit_TestFile)
+	Dim test_file.cbUnit_TestFile
+	
+	test_file = New(cbUnit_TestFile)
 	test_file\id = ConvertToInteger(test_file)
 	test_file\path = path
 	Return test_file\id
 EndFunction
 
 Function NewTestFunction(function_name$)
-	test_function.cbUnit_TestFunction = New(cbUnit_TestFunction)
+	Dim test_function.cbUnit_TestFunction
+	
+	test_function = New(cbUnit_TestFunction)
 	test_function\id = ConvertToInteger(test_function)
 	test_function\function_name = function_name
 	Return test_function\id
 EndFunction
 
 Function ResetTestFunctions()
-	For test_function.cbUnit_TestFunction = Each cbUnit_TestFunction
+	Dim test_function.cbUnit_TestFunction
+	
+	For test_function = Each cbUnit_TestFunction
 		Delete test_function
 	Next test_function
 EndFunction
 
 // Settings
 Function setSetting(name$, value$)
+	Dim setting.cbUnit_Setting
+	
 	name = Upper(name)
-	setting.cbUnit_Setting = getSettingInstance(name)
+	setting = getSettingInstance(name)
 	If setting = NULL Then setting.cbUnit_Setting = New(cbUnit_Setting)
 	setting\id = ConvertToInteger(setting)
 	setting\name = name
@@ -217,14 +237,18 @@ Function setSetting(name$, value$)
 EndFunction
 
 Function getSetting(name$, if_not_found$="")
-	setting.cbUnit_Setting = getSettingInstance(name)
+	Dim setting.cbUnit_Setting
+	
+	setting = getSettingInstance(name)
 	If setting = NULL Then Return if_not_found
 	Return setting\value
 EndFunction
 
 Function getSettingInstance(name$)
+	Dim setting.cbUnit_Setting
+	
 	name = Upper(name)
-	For setting.cbUnit_Setting = Each cbUnit_Setting
+	For setting = Each cbUnit_Setting
 		If setting\name = name Then Return setting\id
 	Next setting
 	Return 0
