@@ -19,6 +19,10 @@ Function Assert(condition, message$="Assertion condition should be true.", a$=""
 	EndIf
 EndFunction
 
+Function AssertNot(condition, message$="Assertion condition should be false.")
+	Assert(Not condition, message)
+EndFunction
+
 
 // Equals
 Function AssertEquals(a$, b$, message$ = "a$ should be equal to b$.")
