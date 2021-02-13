@@ -1,6 +1,8 @@
 
+// Libraries
 Include "cbRepository.com.cb"
 
+// Constants and globals
 Const cbUnit_TESTS_DIRECTORY = "tests"
 Const cbUnit_TEST_FILE_PATTERN = "test_*.cb"
 Const cbUnit_TEST_PROGRAM_FILE_NAME = "CBCompiler\Editor.out" // Our final test program will be written to this file. CBCompiler.exe expects exactly this file name.
@@ -14,6 +16,7 @@ Global cbUnit_Directory$ : cbUnit_Directory = CleanPath(CurrentDir()) // Direcot
 Global cbUnit_ApplicationDirectory$ : cbUnit_ApplicationDirectory = CleanPath(CurrentDir() + "..\..") // Directory where the testable application lives
 Global cbUnit_EOL$ : cbUnit_EOL = Chr(13) + Chr(10)
 
+// Types
 Type cbUnit_TestFile
 	Field id
 	Field path$
@@ -30,29 +33,31 @@ Type cbUnit_Setting
 	Field value$
 EndType
 
-
-GenerateListOfTestFiles()
-
-
-// Reset output log file
-output_file_path$ = cbUnit_Directory + "\" + cbUnit_TEST_PROGRAM_OUTPUT_FILE_NAME
-output_file = OpenToWrite(output_file_path)
-WriteLine output_file, "cbUnit test result " + Date() + " " + Time() + ":"
-CloseFile output_file
-
-// Test each test file
-For test_file.cbUnit_TestFile = Each cbUnit_TestFile
-	GenerateListOfTestFunctionsAndConstants(test_file\path) // ScaffoldTestProgram() needs this
-	ScaffoldTestProgram(test_file\path, output_file_path, cbUnit_ApplicationDirectory)
+// Main program
+Function MainProgram()
+	GenerateListOfTestFiles()
 	
-	// Compile and run the test program
-	CompileAndRun()
-Next test_file
+	// Reset output log file
+	output_file_path$ = cbUnit_Directory + "\" + cbUnit_TEST_PROGRAM_OUTPUT_FILE_NAME
+	output_file = OpenToWrite(output_file_path)
+	WriteLine output_file, "cbUnit test result " + Date() + " " + Time() + ":"
+	CloseFile output_file
+	
+	// Test each test file
+	For test_file.cbUnit_TestFile = Each cbUnit_TestFile
+		GenerateListOfTestFunctionsAndConstants(test_file\path) // ScaffoldTestProgram() needs this
+		ScaffoldTestProgram(test_file\path, output_file_path, cbUnit_ApplicationDirectory)
+		
+		// Compile and run the test program
+		CompileAndRun()
+	Next test_file
+	
+	// Open the log file and end the program
+	Execute(output_file_path)
+	End
+EndFunction
 
-// Open the log file and end the program
-Execute(output_file_path)
-End
-
+// Compiling
 Function CompileAndRun()
 	// Write instructions For CBCompiler
 	instructions = OpenToWrite("CBCompiler\Compiler")
@@ -99,6 +104,7 @@ Function CompileAndRun()
 EndFunction
 
 
+// Generators / Scaffolders
 Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_directory$)
 	// Prepare a helper skeleton For test function calls (we will modify it later)
 	call_skeleton_file = OpenToRead(cbUnit_TEST_CALL_SKELETON)
@@ -179,6 +185,7 @@ Function GenerateListOfTestFiles()
 	ChDir cbUnit_Directory
 EndFunction
 
+// Type handling
 Function NewTestFile(path$)
 	test_file.cbUnit_TestFile = New(cbUnit_TestFile)
 	test_file\id = ConvertToInteger(test_file)
@@ -193,6 +200,13 @@ Function NewTestFunction(function_name$)
 	Return test_function\id
 EndFunction
 
+Function ResetTestFunctions()
+	For test_function.cbUnit_TestFunction = Each cbUnit_TestFunction
+		Delete test_function
+	Next test_function
+EndFunction
+
+// Settings
 Function setSetting(name$, value$)
 	name = Upper(name)
 	setting.cbUnit_Setting = getSettingInstance(name)
@@ -216,13 +230,10 @@ Function getSettingInstance(name$)
 	Return 0
 EndFunction
 
-Function ResetTestFunctions()
-	For test_function.cbUnit_TestFunction = Each cbUnit_TestFunction
-		Delete test_function
-	Next test_function
-EndFunction
-
-
+// Error handling
 Function HandleError(function_name$, message$)
 	MakeError function_name+"(): "+message
 EndFunction
+
+// Start main program
+MainProgram()
