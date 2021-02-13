@@ -1,6 +1,13 @@
 @echo off
 
-rem Go to the prgoram's directory to store it in a variable
+if not exist ..\CBCompiler\CBCompiler.exe (
+	echo Compiler does not exist in cbUnit\CBCompiler\CBCompiler.exe!
+ 	echo See README.md for installation instructions.
+	pause
+ 	exit
+)
+
+rem Go to the program's directory to store it in a variable
 cd ..
 set "cbUnitDirectory=%cd%"
 
