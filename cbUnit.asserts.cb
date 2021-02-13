@@ -3,7 +3,7 @@
 // PUBLIC FUNCTIONS
 //
 
-Function Assert(condition, message$="Assertion condition is false.", a$="",b$="",c$="")
+Function Assert(condition, message$="Assertion condition should be true.", a$="",b$="",c$="")
 	Dim app.cbUnit_Application
 	
 	app = cbUnit_GetApplication()
