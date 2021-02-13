@@ -1,6 +1,7 @@
 *.exe
 Compiler
-compiler.cmd
+call_compiler.cmd
+signal
 Editor.out
 CompileLog.txt
 # Actually the result of ignoring so much stuff is that we will have an almost empty directory with only this .gitignore file present in the repository. But it's ok, this directory is needed so that someone can copy CBCompiler.exe here when installing cbUnit.
