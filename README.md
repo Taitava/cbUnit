@@ -75,6 +75,15 @@ function test_CountWords2()
 EndFunction
 
 ```
+
+## Running tests
+Running tests is really simple:
+1. Just run `MyApplication\tests\cbUnit\cbUnit.exe`.
+2. cbUnit will read all your `tests\test_*.cb` files. Each one will be compiled and run **one at a time**. Multiple test files are **not** compiled into one program! So different test files can define similarly named functions, variables etc.
+3. After executing all test files, cbUnit will open a report text file in your favorite text editor and quit.
+
+There is currently no way to select which test file(s) will be run. cbUnit runs all of them, but this may change in the future.
+
 ## Settings
 ### In test_*.cb files
 
