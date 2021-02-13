@@ -13,6 +13,7 @@ Function Assert(condition, message$="Assertion condition is false.")
 		// Test failed
 		app\count_failures = app\count_failures + 1
 		cbUnit_Fail(message)
+		If Upper(Str(CBUNIT_STOP_AT)) = "ASSERT" Then cbUnit_EndProgram()
 	EndIf
 EndFunction
 
@@ -179,6 +180,11 @@ EndFunction
 Function cbUnit_HasFailures()
 	app.cbUnit_Application = cbunit_GetApplication()
 	Return app\count_failures > 0
+EndFunction
+
+Function cbUnit_EndProgram()
+	cbUnit_WriteResults(CBUNIT_OUTPUT_FILE_PATH, CBUNIT_TEST_FILE_PATH)
+	End
 EndFunction
 
 Function cbUnit_WriteResults(output_file_path$, test_file_path$)

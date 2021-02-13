@@ -4,8 +4,10 @@
 // Variables:
 // @ test_function_name: string, a function name that we should call. It contains a test that either fails or succeeds.
 
-If Not cbUnit_HasFailures() Then
-	// Only run the test call If previous tests have Not failed!
-	cbUnit_SetCurrentContext("@test_function_name") // If failures happen, we will know under which test_*() Function they happened.
-	@test_function_name()
+If Upper(Str(CBUNIT_STOP_AT)) = "F"+"UNCTION" Then
+	If cbUnit_HasFailures() Then cbUnit_EndProgram() // Prevent running the test call If previous tests have Not failed And If a setting orders us To do so.
 EndIf
+
+cbUnit_SetCurrentContext("@test_function_name") // If failures happen, we will know under which test_*() Function they happened.
+@test_function_name()
+

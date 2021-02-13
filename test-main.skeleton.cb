@@ -5,6 +5,8 @@
 // @ test_file_path: string, contains a directory + file name to a test_*.cb file that we should include into the program
 // @ output_file_path: string, contains a directory + file name to where we will write the test result. The file will be overwritten if it exists.
 
+Const CBUNIT_OUTPUT_FILE_PATH = "@output_file_path"
+Const CBUNIT_TEST_FILE_PATH = "@test_file_path"
 
 ChDir "@application_directory"
 
@@ -16,6 +18,4 @@ Include "@test_file_path"
 
 // INSERT TEST CALLS HERE //
 
-cbUnit_WriteResults("@output_file_path", "@test_file_path")
-
-
+cbUnit_EndProgram()
