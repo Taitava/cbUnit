@@ -20,7 +20,9 @@ To download cbUnit, you can either:
 	 - **or** download a zip archive from [releases](https://github.com/Taitava/cbUnit/releases) or [latest source code](https://github.com/Taitava/cbUnit/archive/master.zip) and unzip it to a new `cbUnit` folder.
 
 ### 2. Copy `CBCompiler.exe` to cbUnit
-Locate your `CBCompiler.exe` file from your `CoolBasic\IDE` folder and **copy** it to `cbUnit\CBCompiler` folder, which is sad and lonely, waiting for the compiler to arrive.
+You have two ways to do this:
+- **Preferred**: If you have installed cbUnit to the default location (in `CoolBasic\cbUnit`), you can go to `CoolBasic\cbUnit\Install` in file explorer (or command line prompt) and run `Copy-CBCompiler.exe.cmd` . It will copy `CBCompiler.exe` from your `CoolBasic\IDE\` folder to `CoolBasic\cbUnit\CBCompiler\`.
+- **OR**: Locate your `CBCompiler.exe` file from your `CoolBasic\IDE` folder and **copy** it to `cbUnit\CBCompiler` folder, which is sad and lonely, waiting for the compiler to arrive.
 
 cbUnit needs CBCompiler because it generates some simple testing framework code and builds it with your custom `test_*.cb` unit test files. We will also use the compiler to compile cbUnit's main program in the next step.
 

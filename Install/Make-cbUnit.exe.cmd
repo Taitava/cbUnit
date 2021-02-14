@@ -5,7 +5,7 @@ set original_directory=%cd%
 
 if not exist ..\CBCompiler\CBCompiler.exe (
 	echo Compiler does not exist in cbUnit\CBCompiler\CBCompiler.exe!
- 	echo See README.md for installation instructions.
+	echo You can try to run Copy-CBCompiler.exe.cmd. If it does not work, see README.md for installation instructions.
 	pause
  	exit /b 1
 )
