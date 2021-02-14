@@ -82,12 +82,12 @@ Function AssertNotEndsWith(a$, b$, ignore_case=0, message="a$ should not end wit
 	Assert(Right(a,Len(b)) <> b, message, a,b)
 EndFunction
 
-Function AssertInStr(a$, b$, ignore_case=0, message$="b$ should be present in $a.")
+Function AssertInStr(a$, b$, ignore_case=0, message$="b$ should be present in a$.")
 	If ignore_case Then a = Lower(a) : b = Lower(b)
 	Assert(InStr(a,b) > 0, message, a,b)
 EndFunction
 
-Function AssertNotInStr(a$, b$, ignore_case=0, message$="b$ should not be present in $a.")
+Function AssertNotInStr(a$, b$, ignore_case=0, message$="b$ should not be present in a$.")
 	If ignore_case Then a = Lower(a) : b = Lower(b)
 	Assert(InStr(a,b) = 0, message, a,b)
 EndFunction
