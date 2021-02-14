@@ -1,6 +1,7 @@
 
 //
 // PRIVATE DEFINITIONS
+// May only be used within this file.
 //
 
 Type cbUnit_Application
