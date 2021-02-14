@@ -42,7 +42,7 @@ Function MainProgram()
 	Dim output_file_path$, output_file, compiler_error$
 	Dim test_file.cbUnit_TestFile
 	
-	SCREEN 300,30
+	SCREEN TextWidth("Compiling a"+"nd running tests..."), TextHeight("H")
 	ClsColor 212,208,200
 	Color 0,0,0
 	Cls
