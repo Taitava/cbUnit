@@ -3,6 +3,7 @@
 Include "cbRepository.com.cb"
 
 // Constants and globals
+Const CBUNIT_VERSION = "0.0.0"
 Const CBUNIT_TESTS_DIRECTORY = "tests"
 Const CBUNIT_TEST_FILE_PATTERN = "test_*.cb"
 Const CBUNIT_TEST_PROGRAM_FILE_NAME = "CBCompiler\Editor.out" // Our final test program will be written to this file. CBCompiler.exe expects exactly this file name.
@@ -39,6 +40,13 @@ EndType
 Function MainProgram()
 	Dim output_file_path$, output_file
 	Dim test_file.cbUnit_TestFile
+	
+	SCREEN 300,30
+	ClsColor 212,208,200
+	Color 0,0,0
+	Cls
+	DrawScreen
+	SetWindow "cbUnit v. " + CBUNIT_VERSION
 	
 	GenerateListOfTestFiles()
 	
@@ -122,6 +130,8 @@ Function CompileAndRun()
 	
 	// Wait Until the program execution is finished
 	While FileExists(signal_file_path)
+		Text 0,0, "Compiling a"+"nd running tests..."
+		DrawScreen
 		Wait(100)
 		// TODO: Break out If the signal file is stuck Forever.
 	Wend
