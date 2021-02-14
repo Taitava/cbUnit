@@ -54,11 +54,13 @@ EndFunction
 
 
 // Strings
-Function AssertBeginsWith(a$, b$, message="a$ should begin with b$.")
+Function AssertBeginsWith(a$, b$, ignore_case=0, message="a$ should begin with b$.")
+	If ignore_case Then a = Lower(a) : b = Lower(b)
 	Assert(Left(a,Len(b)) = b, message, a,b)
 EndFunction
 
-Function AssertNotBeginsWith(a$, b$, message="a$ should not begin with b$.")
+Function AssertNotBeginsWith(a$, b$, ignore_case=0, message="a$ should not begin with b$.")
+	If ignore_case Then a = Lower(a) : b = Lower(b)
 	Assert(Left(a,Len(b)) <> b, message, a,b)
 EndFunction
 
@@ -70,19 +72,23 @@ Function AssertNotEmpty(a$, message$="a$ should not be an empty string.")
 	Assert(a <> "", message, a)
 EndFunction
 
-Function AssertEndsWith(a$, b$, message="a$ should end with b$.")
+Function AssertEndsWith(a$, b$, ignore_case=0, message="a$ should end with b$.")
+	If ignore_case Then a = Lower(a) : b = Lower(b)
 	Assert(Right(a,Len(b)) = b, message, a,b)
 EndFunction
 
-Function AssertNotEndsWith(a$, b$, message="a$ should not end with b$.")
+Function AssertNotEndsWith(a$, b$, ignore_case=0, message="a$ should not end with b$.")
+	If ignore_case Then a = Lower(a) : b = Lower(b)
 	Assert(Right(a,Len(b)) <> b, message, a,b)
 EndFunction
 
-Function AssertInStr(a$, b$, message$="b$ should be present in $a.")
+Function AssertInStr(a$, b$, ignore_case=0, message$="b$ should be present in $a.")
+	If ignore_case Then a = Lower(a) : b = Lower(b)
 	Assert(InStr(a,b) > 0, message, a,b)
 EndFunction
 
-Function AssertNotInStr(a$, b$, message$="b$ should not be present in $a.")
+Function AssertNotInStr(a$, b$, ignore_case=0, message$="b$ should not be present in $a.")
+	If ignore_case Then a = Lower(a) : b = Lower(b)
 	Assert(InStr(a,b) = 0, message, a,b)
 EndFunction
 
