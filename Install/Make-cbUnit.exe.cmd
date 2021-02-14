@@ -1,10 +1,13 @@
 @echo off
 
+rem We should be able to cd back to the original directory because if the script is run from the command line, the command line would change directory to where ever we left.
+set original_directory=%cd%
+
 if not exist ..\CBCompiler\CBCompiler.exe (
 	echo Compiler does not exist in cbUnit\CBCompiler\CBCompiler.exe!
  	echo See README.md for installation instructions.
 	pause
- 	exit
+ 	exit /b 1
 )
 
 rem Go to the program's directory to store it in a variable
@@ -51,4 +54,5 @@ del Editor.out > nul 2> nul
 del Compiler > nul 2> nul
 
 echo Done.
+cd %original_directory%
 pause
