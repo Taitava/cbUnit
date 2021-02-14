@@ -1,6 +1,7 @@
 
-// Libraries
+// Libraries and other includes
 Include "cbRepository.com.cb"
+Include "CompilerErrors.cb"
 
 // Constants and globals
 Const CBUNIT_VERSION = "0.0.0"
@@ -38,7 +39,7 @@ EndType
 
 // Main program
 Function MainProgram()
-	Dim output_file_path$, output_file
+	Dim output_file_path$, output_file, compiler_error$
 	Dim test_file.cbUnit_TestFile
 	
 	SCREEN 300,30
@@ -62,7 +63,17 @@ Function MainProgram()
 		ScaffoldTestProgram(test_file\path, output_file_path, cbUnit_ApplicationDirectory)
 		
 		// Compile and run the test program
-		CompileAndRun()
+		compiler_error = CompileAndRun()
+		
+		// Write a possible compile error To the output file
+		If compiler_error Then
+			output_file = OpenToEdit(output_file_path)
+			SeekFile output_file, FileSize(output_file_path)
+			WriteLine output_file, ""
+			WriteLine output_file, test_file\path + ":"
+			WriteLine output_file, compiler_error
+			CloseFile output_file
+		EndIf
 	Next test_file
 	
 	// Open the log file and end the program
@@ -88,7 +99,7 @@ EndFunction
 
 // Compiling
 Function CompileAndRun()
-	Dim force_variable_declaration, instructions, command_line_parameters$, cmd, signal_file_path$
+	Dim force_variable_declaration, instructions, command_line_parameters$, cmd, signal_file_path$, compiler_log_path$
 
 	// Write instructions For CBCompiler
 	force_variable_declaration = getSetting("FORCE_VARIABLE_DECLARATION")
@@ -109,13 +120,18 @@ Function CompileAndRun()
 	WriteLine cmd, "del cbUnitTestProgram.exe" // Should Not exist at this point but try To Delete just in Case
 	WriteLine cmd, "echo Compiling..."
 	WriteLine cmd, "call CBCompiler.exe"
-	WriteLine cmd, "echo Running testing application..."
-	WriteLine cmd, "ren cbRun.exe cbUnitTestProgram.exe"
-	WriteLine cmd, "call cbUnitTestProgram.exe " + command_line_parameters
-	WriteLine cmd, "echo Finishing..."
+	WriteLine cmd, "If exist cbRun.exe ("
+	WriteLine cmd, "    echo Running testing application..."
+	WriteLine cmd, "    ren cbRun.exe cbUnitTestProgram.exe"
+	WriteLine cmd, "    call cbUnitTestProgram.exe " + command_line_parameters
+	WriteLine cmd, "    echo Finishing..."
+	WriteLine cmd, "    del CompileLog.txt" // Only Delete CompileLog.txt If compiling was successful. 
+	WriteLine cmd, ") Else ("
+	WriteLine cmd, "    echo Compiling failed!"
+	WriteLine cmd, "    echo Cleaning up..."
+	WriteLine cmd, ")"
 	WriteLine cmd, "del cbUnitTestProgram.exe"
 	WriteLine cmd, "del signal"
-	WriteLine cmd, "del CompileLog.txt"
 	WriteLine cmd, "del Compiler" // Delete the instructions file
 	WriteLine cmd, "del Editor.out"
 	WriteLine cmd, "del %0" // Delete call_compiler.cmd
@@ -136,8 +152,78 @@ Function CompileAndRun()
 		// TODO: Break out If the signal file is stuck Forever.
 	Wend
 	// The program has finished running
+	
+	compiler_log_path = cbUnit_Directory(True)+"CBCompiler\CompileLog.txt"
+	If FileExists(compiler_log_path) Then
+		// CompileLog.txt was Not deleted by call_compiler.cmd, which usually means that the compiling has failed.
+		// Check did the compiling really fail And If so, Return the compile error.
+		Return InspectCompileLog(compiler_log_path, True)
+	EndIf
+	
+	Return "" // Means: no compile error
 EndFunction
 
+Function InspectCompileLog(compiler_log_path$, delete_log=0)
+	Dim compiler_log, header$, line_$, subject$, value$, error_code, error_module$, error_line, error_detail$, indent$, result$
+	// Force Variable Declaration example of CompileLog.txt (no indentation):
+	//   ERROR
+	//   code 37
+	//   module c:\path\To\cbunit\cbunit.runtime.cb
+	//   Line 11
+	//   detail name_of_undefined_variable
+	
+	// Another example with an error "Cannot process due To irregular String marks at Line 7":
+	//   ERROR
+	//   code 10
+	//   Line 7
+	//   detail 
+	
+	compiler_log = OpenToRead(compiler_log_path)
+	header = Upper(ReadLine(compiler_log))
+	If header = "ERROR" Then
+		// Some compilation error has happened
+		// Read the Log content into error_* variables
+		While Not EOF(compiler_log)
+			line_ = Trim(ReadLine(compiler_log))
+			subject = GetWord2(line_, 1, " ") // E.g. "code", Or "module"
+			subject = Upper(Left(subject,1)) + Lower(Mid(subject,2)) // Capitalize subject so that it fits our Select Case strutuce below. This is due To CBEditor making the literal String "Line" capitalised.
+			value = Trim(Mid(line_, Len(subject)+1)) // E.g. "37" Or "c:\path\To\cbunit\cbunit.runtime.cb"
+			Select subject
+			Case "Code"
+				error_code = Int(value)
+				// Ensure that code is between 0 - 200. Should Not be anything Else, but do this just in Case To avoid irregular Read of an array.
+				If error_code > 200 Or error_code < 0 Then error_code = 0 // Error code 0 does Not exist, but it's ok, it will result in an empty String in the error message.
+			Case "Module"
+				// Path To a *.cb file that contains the error. This is Not always present in CompileLog.txt For some reason.
+				error_module = value
+			Case "Line"
+				error_line = Int(value)
+			Case "Detail"
+				// This is usually some variable name Or something similar
+				error_detail = value
+			EndSelect
+		Wend
+		
+		// Generate a human readable message
+		indent = "  "
+		result = indent + "Compile error "+error_code+": " + getCompilerError(error_code, error_detail) + cbUnit_EOL
+		If error_line Then
+			result = result + indent + "At l"+"ine " + error_line // No newline here
+			If error_module Then result = result + " in " + error_module // No newline here
+			result + cbUnit_EOL
+		ElseIf error_module
+			result = result + indent + "in " + error_module + cbUnit_EOL
+		EndIf
+		
+	Else
+		// Compilation was successful
+		// (We do Not come here After every successful compilation; this function is called only If CompileLog.txt was Not deleted. But it should be deleted After a successful compilation.)
+		result = ""
+	EndIf
+	CloseFile compiler_log
+	If delete_log Then DeleteFile compiler_log_path
+	Return result
+EndFunction
 
 // Generators / Scaffolders
 Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_directory$)

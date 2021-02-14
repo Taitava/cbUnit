@@ -1,0 +1,44 @@
+
+// These error messages are copied from CoolBasic\Help\errors.html
+// Use '$' as a substitute for a symbol name in the error messages.
+Dim CompilerErrors(200) As String
+CompilerErrors(1) = "Remark block error. End block wihout start block"
+CompilerErrors(10) = "Cannot process due to irregular string marks"
+CompilerErrors(11) = "Cannot process due to irregular brackets"
+CompilerErrors(32) = "Duplicate identifier name"
+CompilerErrors(37) = "Variable '$' is not defined. You have chosen to force variable declaration before usage. Read the manual for more info"
+CompilerErrors(38) = "Invalid identifier name. You can't define '$' as identifier"
+CompilerErrors(39) = "Invalid identifier name. Custom type not defined for identifier '$'"
+CompilerErrors(41) = "Wrong usage of a keyword. Keyword '$' needs to be expressed with a set of brackets"
+CompilerErrors(42) = "Wrong usage of a keyword. Keyword '$' is out of place"
+CompilerErrors(46) = "Wrong usage of a constant. Constant '$' is out of place"
+CompilerErrors(47) = "Constant statement error. Constant must have a number or string applied to it"
+CompilerErrors(50) = "Sorry, but you can't assign a custom type to global variables or arrays. This feature might be added in the future coming versions"
+CompilerErrors(55) = "Function not found. Variable cannot be used like this. This should be an assignment statement."
+CompilerErrors(56) = "Syntax error. Read the usage of this keyword in the manual"
+CompilerErrors(57) = "Syntax error. Read the usage of this keyword in the manual"
+CompilerErrors(58) = "Forbidden operation. The only allowed operations to strings are comparison, and 'plus'"
+CompilerErrors(59) = "Type declaration out of place / Variable '$' can't be used like this"
+CompilerErrors(60) = "Syntax error. Empty brackets not allowed. Invalid array definition for '$'"
+CompilerErrors(61) = "Syntax error. A function requires a set of brackets."
+CompilerErrors(62) = "Syntax error. You can't declare function variable without optional assignment after optional parameters are defined."
+CompilerErrors(66) = "Too many dimensios for array '$'"
+CompilerErrors(69) = "Function block out of place. A function can't be inside other functions."
+CompilerErrors(75) = "Variable '$' already defined with another type"
+CompilerErrors(78) = "Not enough parameters"
+CompilerErrors(79) = "Too many parameters"
+CompilerErrors(80) = "Invalid STEP-value. Please make it simplier. It must be a positive or negative integer number or an integer constant."
+CompilerErrors(82) = "'$' must be used inside main program."
+CompilerErrors(86) = "Error in structure. Can't find ending block"
+CompilerErrors(87) = "Error with '$' Command out of place"
+CompilerErrors(88) = "Can't find missing '$'. Structure start block missing"
+CompilerErrors(90) = "Label '$' not found"
+CompilerErrors(99) = "Can't find missing FUNCTION -statement"
+CompilerErrors(101) = "Type mismatch. You must pass a different type of parameter to this function or command or array."
+CompilerErrors(102) = "Operand type mismatch. You can't perform this mathematical operation to these operands."
+CompilerErrors(103) = "Type mismatch. Only integers are allowed as array dimensions."
+CompilerErrors(200) = "Can't write program!"
+
+Function getCompilerError(code, detail$)
+	Return Replace(CompilerErrors(code), "$", detail)
+EndFunction
