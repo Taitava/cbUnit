@@ -51,11 +51,11 @@ EndFunction
 
 
 // Strings
-Function AssertEmptyString(a$, message$="a$ should be an empty string.")
+Function AssertEmpty(a$, message$="a$ should be an empty string.")
 	Assert(a = "", message, a)
 EndFunction
 
-Function AssertNotEmptyString(a$, message$="a$ should not be an empty string.")
+Function AssertNotEmpty(a$, message$="a$ should not be an empty string.")
 	Assert(a <> "", message, a)
 EndFunction
 
