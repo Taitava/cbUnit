@@ -88,6 +88,8 @@ Running tests is really simple:
 
 There is currently no way to select which test file(s) will be run. cbUnit runs all of them, but this may change in the future.
 
+If you have made a syntax error (in a `test_*.cb` file or in your application code), CBCompiler will alert you with a popup error box, but in addition to this, the report file that cbUnit creates for you, contains the same compile error. If you have multiple `test_*.cb` files, cbUnit will continue to compile and run other test files after the failing one. It might result in multiple failing compiles if the syntax error happens to be in your application code, and not in a single test file.
+
 ## Settings
 ### In test_*.cb files
 
