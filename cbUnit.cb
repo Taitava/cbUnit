@@ -10,6 +10,8 @@ Const CBUNIT_TEST_FILE_PATTERN = "test_*.cb"
 Const CBUNIT_TEST_PROGRAM_FILE_NAME = "CBCompiler\Editor.out" // Our final test program will be written to this file. CBCompiler.exe expects exactly this file name.
 Const CBUNIT_TEST_PROGRAM_OUTPUT_FILE_NAME = "cbUnit.results.txt" // Our final test program will write its test results to this file
 Const CBUNIT_TEST_FUNCTION_PATTERN = "Function test_*(*"
+Const CBUNIT_HOOK_FUNCTION_PATTERN = "Function hook_*(*"
+Const CBUNIT_HOOK_FUNCTION_NAMES = "hook_Setup:0 hook_SetupTest:1 hook_Cleanup:0 hook_CleanupTest:1" // Number :x at the end of each function name tells the number of parameters the function takes. Needed when defining empty functions.
 Const CBUNIT_CONSTANT_PATTERN = "Const CBUNIT_*=*"
 Const CBUNIT_TEST_MAIN_SKELETON = "test-main.skeleton.cb"
 Const CBUNIT_TEST_CALL_SKELETON = "test-call.skeleton.cb"
@@ -26,6 +28,11 @@ Type cbUnit_TestFile
 EndType
 
 Type cbUnit_TestFunction
+	Field id
+	Field function_name$
+EndType
+
+Type cbUnit_HookFunction
 	Field id
 	Field function_name$
 EndType
@@ -227,7 +234,7 @@ EndFunction
 
 // Generators / Scaffolders
 Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_directory$)
-	Dim call_skeleton_file, call_skeleton$, test_program_file, runtime_setting_definitions$, main_skeleton_file, line_$, call$
+	Dim call_skeleton_file, call_skeleton$, test_program_file, runtime_setting_definitions$, hook_function_definions$, main_skeleton_file, line_$, call$
 	Dim test_function.cbUnit_TestFunction
 
 	// Prepare a helper skeleton For test function calls (we will modify it later)
@@ -246,6 +253,14 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 	If runtime_setting_definitions Then
 		WriteLine test_program_file, "// Define runtime settings with d"+"efault values:"
 		WriteLine test_program_file, runtime_setting_definitions
+		WriteLine test_program_file, ""
+	EndIf
+	
+	// Write empty hook functions To substitute those that are Not present in the test_*.cb file
+	hook_function_definions = EnsureHookFunctionsAreDefined()
+	If hook_function_definions Then
+		WriteLine test_program_file, "// Define empty hook functions:"
+		WriteLine test_program_file, hook_function_definions
 		WriteLine test_program_file, ""
 	EndIf
 	
@@ -295,10 +310,39 @@ Function EnsureRuntimeSettingsAreDefined()
 	Return setting_definitions
 EndFunction
 
+// Returns a string of hook functions that are not defined in the current test_*.cb file.
+Function EnsureHookFunctionsAreDefined()
+	Dim result$, i, hook_function_details$, hook_function_name$, count_parameters, is_defined, parameters$
+	Dim defined_hook_function.cbUnit_HookFunction
+	
+	result = ""
+	
+	// Iterate Each possible hook Function
+	For i = 1 To CountWords2(CBUNIT_HOOK_FUNCTION_NAMES, " ")
+		hook_function_details = GetWord2(CBUNIT_HOOK_FUNCTION_NAMES, i, " ")
+		hook_function_name = GetWord2(hook_function_details, 1, ":")
+		count_parameters = GetWord2(hook_function_details, 2, ":")
+		
+		// Iterate hook functions defined in the test_*.cb file
+		is_defined = False
+		For defined_hook_function = Each cbUnit_HookFunction
+			If defined_hook_function\function_name = hook_function_name Then is_defined = True
+		Next defined_hook_function
+		If Not is_defined Then
+			// Define an empty Function
+			parameters = Countdown("_$", ",", count_parameters) // Produces a String of parameter variable names like "_0,_1,_2"
+			result = result + "Function "+hook_function_name+"("+parameters+") : EndFunction" + cbUnit_EOL
+		EndIf
+	Next i
+	
+	Return result
+EndFunction
+
 Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
-	Dim test_file, line_$, test_function_name$, constant_name$, setting_name$, constant_value$
+	Dim test_file, line_$, test_function_name$, hook_function_name$, constant_name$, setting_name$, constant_value$
 
 	ResetTestFunctions()
+	ResetHookFunctions()
 	test_file = OpenToRead(test_file_path)
 	While Not EOF(test_file)
 		line_$ = Trim(ReadLine(test_file))
@@ -307,6 +351,11 @@ Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
 			// Mark up that we can call this Function
 			test_function_name$ = Trim(GetBetween(line_, "Function", "(")) // TODO: Fix Case sensitivity problem with the word Function.
 			NewTestFunction(test_function_name)
+			
+		ElseIf PatternCompare(CBUNIT_HOOK_FUNCTION_PATTERN, line_, False) Then
+			// This Line contains a hook_*() Function, which is a special hook used by cbUnit
+			hook_function_name$ = Trim(GetBetween(line_, "Function", "(")) // TODO: Fix Case sensitivity problem with the word Function.
+			NewHookFunction(hook_function_name)
 			
 		ElseIf PatternCompare(CBUNIT_CONSTANT_PATTERN, line_, False) Then
 			// This Line contains a CBUNIT_* constant definition
@@ -362,12 +411,29 @@ Function NewTestFunction(function_name$)
 	Return test_function\id
 EndFunction
 
+Function NewHookFunction(function_name$)
+	Dim hook_function.cbUnit_HookFunction
+	
+	hook_function = New(cbUnit_HookFunction)
+	hook_function\id = ConvertToInteger(hook_function)
+	hook_function\function_name = function_name
+	Return hook_function\id
+EndFunction
+
 Function ResetTestFunctions()
 	Dim test_function.cbUnit_TestFunction
 	
 	For test_function = Each cbUnit_TestFunction
 		Delete test_function
 	Next test_function
+EndFunction
+
+Function ResetHookFunctions()
+	Dim hook_function.cbUnit_HookFunction
+	
+	For hook_function = Each cbUnit_HookFunction
+		Delete hook_function
+	Next hook_function
 EndFunction
 
 // Settings
@@ -417,6 +483,18 @@ EndFunction
 Function HandleError(function_name$, message$)
 	MakeError function_name+"(): "+message
 EndFunction
+
+// Misc
+Function Countdown(pattern$, separator$, count)
+	Dim i, result$
+	
+	For i = 0 To count-1
+		If result Then result + separator
+		result = result + Replace(pattern, "$", Str(i))
+	Next i
+	Return result
+EndFunction
+
 
 // Start main program
 MainProgram()

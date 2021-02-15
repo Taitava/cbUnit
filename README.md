@@ -79,6 +79,30 @@ EndFunction
 
 ```
 
+#### Hooks in a `test_*.cb` file
+You can define the following *optional* functions in your `test_*.cb` file, and cbUnit will call them during appropriate events.
+
+Hook | Description
+-----|------------
+`hook_Setup()` | Called before calling the first test function.
+`hook_SetupTest(function_name$)` | Called before calling each test function. Gets a name of a test function that will be called next as a parameter.
+`hook_Cleanup()` | Called just before ending the test program, in both cases: a) all tests ran, or b) a stop rule triggered after a failing test.
+`hook_CleanupTest(function_name$)` | Called after calling a certain test function. Gets also called if the particular test function had a failing assertion and a stop rule triggered to end the test program.
+
+Example:
+```
+Function hook_Setup()
+	// Generate temporary text files for testing...
+EndFunction
+
+Function hook_Cleanup()
+	// Remove all generated text files...
+	// This is handy because this is called even if the test program exits before reaching the end of the test_*.cb file.
+EndFunction
+```
+
+Return values of the hook functions are not used for anything.
+
 ## Running tests
 Running tests is really simple:
 1. If you have not already done so, in your application's root folder, create a file named `cbUnit.cmd`  (or you can decide another name for it if you wish). Edit it and add the following line: `start "cbUnit" "C:\Program Files (x86)\CoolBasic\cbUnit\cbUnit.exe"` (or whatever is the path to your *CoolBasic* directory). This *.cmd*-file works now as your link to start cbUnit.

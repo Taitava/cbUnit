@@ -9,5 +9,6 @@ If Upper(Str(CBUNIT_STOP_AT)) = "F"+"UNCTION" Then
 EndIf
 
 cbUnit_SetCurrentContext("@test_function_name") // If failures happen, we will know under which test_*() Function they happened.
+hook_SetupTest("@test_function_name") // Hook for test_*.cb to do preparations.
 @test_function_name()
-
+hook_CleanupTest("@test_function_name") // Hook for test_*.cb to do cleanup.

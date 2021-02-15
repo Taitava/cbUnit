@@ -17,6 +17,8 @@ Include "@cbunit_directory\cbUnit.asserts.cb"
 // Include the user-defined test file
 Include "@test_file_path"
 
+hook_Setup() // Hook for test_*.cb to do preparations.
+
 // INSERT TEST CALLS HERE //
 
 cbUnit_EndProgram()

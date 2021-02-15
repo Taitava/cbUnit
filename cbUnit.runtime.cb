@@ -68,6 +68,7 @@ Function cbUnit_HasFailures()
 EndFunction
 
 Function cbUnit_EndProgram()
+	hook_Cleanup() // Hook For test_*.cb To cleanup Before exit
 	cbUnit_WriteResults(CBUNIT_OUTPUT_FILE_PATH, CBUNIT_TEST_FILE_PATH) // These constants are defined in either test_*.cb files, Or If Not present there, cbUnit.cb inserts them To the compilable program.
 	End
 EndFunction
