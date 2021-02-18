@@ -1,5 +1,6 @@
 
 // These error messages are copied from CoolBasic\Help\errors.html
+// (The following error messages differ from the help, because I've noticed that the compiler gives a different error message: 57, 59)
 // Use '$' as a substitute for a symbol name in the error messages.
 Dim CompilerErrors(200) As String
 CompilerErrors(1) = "Remark block error. End block wihout start block"
@@ -16,9 +17,9 @@ CompilerErrors(47) = "Constant statement error. Constant must have a number or s
 CompilerErrors(50) = "Sorry, but you can't assign a custom type to global variables or arrays. This feature might be added in the future coming versions"
 CompilerErrors(55) = "Function not found. Variable cannot be used like this. This should be an assignment statement."
 CompilerErrors(56) = "Syntax error. Read the usage of this keyword in the manual"
-CompilerErrors(57) = "Syntax error. Read the usage of this keyword in the manual"
+CompilerErrors(57) = "Syntax error. Can't understand the statement."
 CompilerErrors(58) = "Forbidden operation. The only allowed operations to strings are comparison, and 'plus'"
-CompilerErrors(59) = "Type declaration out of place / Variable '$' can't be used like this"
+CompilerErrors(59) = "Variable '$' can't be used like this"
 CompilerErrors(60) = "Syntax error. Empty brackets not allowed. Invalid array definition for '$'"
 CompilerErrors(61) = "Syntax error. A function requires a set of brackets."
 CompilerErrors(62) = "Syntax error. You can't declare function variable without optional assignment after optional parameters are defined."
