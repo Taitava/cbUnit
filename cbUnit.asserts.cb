@@ -16,6 +16,7 @@ Function Assert(condition, message$="Assertion condition should be true.", a$=""
 	If condition Then
 		// Test succeeded
 		app\count_successes = app\count_successes + 1
+		Return True
 	Else
 		// Test failed
 		app\count_failures = app\count_failures + 1
@@ -24,89 +25,90 @@ Function Assert(condition, message$="Assertion condition should be true.", a$=""
 			hook_CleanupTest(app\current_context) // Hook For test_*.cb To do cleanup. Not called in cbUnit_EndProgram() because otherwise the hook would be called twice For the Last test Function of the file, because test-call.skeleton.cb calls this too.
 			cbUnit_EndProgram()
 		EndIf
+		Return False
 	EndIf
 EndFunction
 
 Function AssertNot(condition, message$="Assertion condition should be false.")
-	Assert(Not condition, message)
+	Return Assert(Not condition, message)
 EndFunction
 
 
 // Equals
 Function AssertEquals(a$, b$, message$ = "a$ should be equal to b$.")
-	Assert(a = b, message, a,b)
+	Return Assert(a = b, message, a,b)
 EndFunction
 
 Function AssertNotEquals(a$, b$, message$ = "a$ should not be equal to b$.")
-	Assert(a <> b, message, a,b)
+	Return Assert(a <> b, message, a,b)
 EndFunction
 
 Function AssertGreater(a$, b$, message$ = "a$ should be greater than b$.")
-	Assert(a > b, message, a,b)
+	Return Assert(a > b, message, a,b)
 EndFunction
 
 Function AssertGreaterOrEqual(a$, b$, message$ = "a$ should be greater than or equal to b$.")
-	Assert(a >= b, message, a,b)
+	Return Assert(a >= b, message, a,b)
 EndFunction
 
 Function AssertLess(a$, b$, message$ = "a$ should be less than b$.")
-	Assert(a < b, message, a,b)
+	Return Assert(a < b, message, a,b)
 EndFunction
 
 Function AssertLessOrEqual(a$, b$, message$ = "a$ should be less than or equal to b$.")
-	Assert(a <= b, message, a,b)
+	Return Assert(a <= b, message, a,b)
 EndFunction
 
 
 // Strings
 Function AssertBeginsWith(a$, b$, ignore_case=0, message="a$ should begin with b$.")
 	If ignore_case Then a = Lower(a) : b = Lower(b)
-	Assert(Left(a,Len(b)) = b, message, a,b)
+	Return Assert(Left(a,Len(b)) = b, message, a,b)
 EndFunction
 
 Function AssertNotBeginsWith(a$, b$, ignore_case=0, message="a$ should not begin with b$.")
 	If ignore_case Then a = Lower(a) : b = Lower(b)
-	Assert(Left(a,Len(b)) <> b, message, a,b)
+	Return Assert(Left(a,Len(b)) <> b, message, a,b)
 EndFunction
 
 Function AssertEmpty(a$, message$="a$ should be an empty string.")
-	Assert(a = "", message, a)
+	Return Assert(a = "", message, a)
 EndFunction
 
 Function AssertNotEmpty(a$, message$="a$ should not be an empty string.")
-	Assert(a <> "", message, a)
+	Return Assert(a <> "", message, a)
 EndFunction
 
 Function AssertEndsWith(a$, b$, ignore_case=0, message="a$ should end with b$.")
 	If ignore_case Then a = Lower(a) : b = Lower(b)
-	Assert(Right(a,Len(b)) = b, message, a,b)
+	Return Assert(Right(a,Len(b)) = b, message, a,b)
 EndFunction
 
 Function AssertNotEndsWith(a$, b$, ignore_case=0, message="a$ should not end with b$.")
 	If ignore_case Then a = Lower(a) : b = Lower(b)
-	Assert(Right(a,Len(b)) <> b, message, a,b)
+	Return Assert(Right(a,Len(b)) <> b, message, a,b)
 EndFunction
 
 Function AssertInStr(a$, b$, ignore_case=0, message$="b$ should be present in a$.")
 	If ignore_case Then a = Lower(a) : b = Lower(b)
-	Assert(InStr(a,b) > 0, message, a,b)
+	Return Assert(InStr(a,b) > 0, message, a,b)
 EndFunction
 
 Function AssertNotInStr(a$, b$, ignore_case=0, message$="b$ should not be present in a$.")
 	If ignore_case Then a = Lower(a) : b = Lower(b)
-	Assert(InStr(a,b) = 0, message, a,b)
+	Return Assert(InStr(a,b) = 0, message, a,b)
 EndFunction
 
 Function AssertIsLower(a$, message$="a$ should not contain any uppercase letters.")
-	Assert(Lower(a) = a, message, a)
+	Return Assert(Lower(a) = a, message, a)
 EndFunction
 
 Function AssertIsUpper(a$, message$="a$ should not contain any lowercase letters.")
-	Assert(Upper(a) = a, message, a)
+	Return Assert(Upper(a) = a, message, a)
 EndFunction
 
 Function AssertLen(a$, b$, message$="The length of a$ should be b$, now it's c$.")
-	Assert(Len(a) = Int(b), message, a, b, Len(a))
+	Return Assert(Len(a) = Int(b), message, a, b, Len(a))
 EndFunction
 
 
@@ -114,13 +116,13 @@ EndFunction
 Function AssertMaxDifference(a#, b#, c#, message$="The difference between a$ and $b should be $c at maximum. Now the difference is d$.")
 	Dim difference#
 	difference = Abs(a-b)
-	Assert(difference <= c, message, a,b,c,difference)
+	Return Assert(difference <= c, message, a,b,c,difference)
 EndFunction
 
 Function AssertMinDifference(a#, b#, c#, message$="The difference between a$ and $b should be $c at minimum. Now the difference is d$.")
 	Dim difference#
 	difference = Abs(a-b)
-	Assert(difference >= c, message, a,b,c,difference)
+	Return Assert(difference >= c, message, a,b,c,difference)
 EndFunction
 
 // a: The value whose sign should be tested.
@@ -134,11 +136,11 @@ Function AssertSign(a#,b, zero_sign=0, message$="The sign of number a$ should be
 	Else
 		sign = a/Abs(a)
 	EndIf
-	Assert(sign = b, message, a,b,sign)
+	Return Assert(sign = b, message, a,b,sign)
 EndFunction
 
 Function AssertZero(a$, message$="a$ should be zero.") // Use a$ instead of a# so that we can assure that "" is not accidentally interpreted as 0.
-	Assert(a="0" Or a="0.0", message, a)
+	Return Assert(a="0" Or a="0.0", message, a)
 EndFunction
 
 
@@ -146,15 +148,15 @@ EndFunction
 
 // Data types
 Function AssertBool(a$, message$="a$ should be 0 or 1.")
-	Assert(a = "0" Or a = "1", message, a) // Should we consider 0.0 And 1.0 too? Maybe Not.
+	Return Assert(a = "0" Or a = "1", message, a) // Should we consider 0.0 And 1.0 too? Maybe Not.
 EndFunction
 
 Function AssertFloat(a$, message$="a$ should be a float.")
-	Assert(Str(Float(a)) = a, message, a)
+	Return Assert(Str(Float(a)) = a, message, a)
 EndFunction
 
 Function AssertInteger(a$, message$="a$ should be an integer.")
-	Assert(Str(Int(a)) = a, message, a)
+	Return Assert(Str(Int(a)) = a, message, a)
 EndFunction
 
 Function AssertIntegerOrFloat(a$, message$="a$ should be an integer or a float.")
@@ -162,7 +164,7 @@ Function AssertIntegerOrFloat(a$, message$="a$ should be an integer or a float."
 	
 	is_integer = Str(Int(a)) = a
 	is_float = Str(Float(a)) = a
-	Assert(is_integer Or is_float, message, a)
+	Return Assert(is_integer Or is_float, message, a)
 EndFunction
 
 
@@ -176,7 +178,7 @@ Function AssertFileExists(a$, accept_directory=0, message$="")
 		condition = FileExists(a) And False=IsDirectory(a)
 		If message = "" Then message = "File a$ should exist And must n"+"ot be a directory."
 	EndIf
-	Assert(condition, message, a)
+	Return Assert(condition, message, a)
 EndFunction
 
 Function AssertNotFileExists(a$, accept_directory=0, message$="")
@@ -188,13 +190,13 @@ Function AssertNotFileExists(a$, accept_directory=0, message$="")
 		condition = False=FileExists(a) Or IsDirectory(a)
 		If message = "" Then message = "File a$ should not exist (but a directory with that name would be allowed, although that's n"+"ot the c"+"ase now)."
 	EndIf
-	Assert(condition, message, a)
+	Return Assert(condition, message, a)
 EndFunction
 
 Function AssertDirectoryExists(a$, accept_directory=1, message$="Directory a$ should exist.")
-	Assert(IsDirectory(a), message, a)
+	Return Assert(IsDirectory(a), message, a)
 EndFunction
 
 Function AssertNotDirectoryExists(a$, accept_directory=1, message$="Directory a$ should exist.")
-	Assert(Not IsDirectory(a), message, a)
+	Return Assert(Not IsDirectory(a), message, a)
 EndFunction
