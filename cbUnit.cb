@@ -485,8 +485,7 @@ Function InitializeUnitTestsInDirectory(initialization_directory$)
 			
 			// Create empty test_*.cb files.
 			For f = Each File
-				file_name = GetWord2(f\path, CountWords2(f\path, "\"), "\") // Remove absolute path.
-				file_name = "test_"+file_name // It already has the .cb extension.
+				file_name = "test_"+f\name // It already has the .cb extension.
 				CloseFile OpenToWrite(tests_folder_path + "\" + file_name)
 			Next f
 			

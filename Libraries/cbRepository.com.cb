@@ -187,8 +187,11 @@ EndFunction
 // Modifications:
 //  - Made the functions FVD compatible.
 //  - Made it posibble to turn recursion off.
+//  - Changed File\path field to absolute_path and added name and directory fields.
 Type File // TODO: Rename to FoundFile
-	Field path As String // TODO: Add name$ Field that contains just the file name without path
+	Field name As String
+	Field directory As String
+	Field absolute_path As String
 	Field isFolder As Byte
 	Field isNew As Byte
 EndType
@@ -204,16 +207,20 @@ Function listFiles(extension$="", recursive=1) // TODO: Add directory$ parameter
 	Repeat
 		filename$ = FindFile()
 		If IsDirectory(filename)=False And (Lower(Str(getFileExtension(filename))) = extension Or extension = "") Then
-			f.File		= New(File)
-			f\path		= CurrentDir()+filename
-			f\isFolder	= False
-			f\isNew		= True
+			f.File			= New(File)
+			f\name			= filename
+			f\directory		= CurrentDir()
+			f\absolute_path = CurrentDir()+filename
+			f\isFolder		= False
+			f\isNew			= True
 			foundFiles+1
 		ElseIf recursive And (IsDirectory(filename) And filename <> "." And filename <> "..") Then // Only add folders To the collection If we are going To iterate them too.
-			f.File		= New(File)
-			f\path		= CurrentDir()+filename
-			f\isFolder	= True
-			f\isNew		= True
+			f.File			= New(File)
+			f\name			= filename
+			f\directory		= CurrentDir()
+			f\absolute_path = CurrentDir()+filename
+			f\isFolder		= True
+			f\isNew			= True
 			foundFiles+1 'although this is a directory (Not a file), we will COUNT it As a file
 		EndIf
 	Until filename = ""
@@ -224,7 +231,7 @@ Function listFiles(extension$="", recursive=1) // TODO: Add directory$ parameter
 			If (f\isNew) Then
 				f\isNew = False
 				If (f\isFolder) Then
-					ChDir f\path
+					ChDir f\absolute_path
 					listFiles(extension)
 				EndIf
 			EndIf
