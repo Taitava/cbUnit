@@ -455,7 +455,7 @@ EndFunction
 //*
 Function InitializeUnitTestsInDirectory(initialization_directory$)
 	Dim message$, tests_folder_path$, cbUnitCmd_file_path$, cbUnitCmd_file, file_name$
-	Dim f.File
+	Dim f.FoundFile
 	
 	tests_folder_path = initialization_directory + "\" + CBUNIT_TESTS_DIRECTORY
 	cbUnitCmd_file_path = initialization_directory + "\cbUnit.cmd"
@@ -481,7 +481,7 @@ Function InitializeUnitTestsInDirectory(initialization_directory$)
 			ListFiles(initialization_directory, "cb", False)
 			
 			// Create empty test_*.cb files.
-			For f = Each File
+			For f = Each FoundFile
 				file_name = "test_"+f\name // It already has the .cb extension.
 				CloseFile OpenToWrite(tests_folder_path + "\" + file_name)
 			Next f
