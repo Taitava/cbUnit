@@ -82,9 +82,9 @@ Function cbUnit_WriteResults(output_file_path$, test_file_path$)
 	app = cbUnit_GetApplication()
 	WriteLine output_file, ""
 	WriteLine output_file, test_file_path+":"
-	WriteLine output_file, "  " + app\count_tests + " total tests."
-	WriteLine output_file, "  " + app\count_successes + " succeeded tests."
-	WriteLine output_file, "  " + app\count_failures + " failed tests."
+	WriteLine output_file, "  " + app\count_tests + " total assertions."
+	WriteLine output_file, "  " + app\count_successes + " succeeded assertions."
+	WriteLine output_file, "  " + app\count_failures + " failed assertions."
 	If app\count_failures Then
 		// Write test failure messages
 		WriteLine output_file, "  Failures:"
