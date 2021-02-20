@@ -454,10 +454,9 @@ EndFunction
 // @param string initialization_directory An absolute path to the directory where "tests" folder and "cbUnit.cmd" file will be created.
 //*
 Function InitializeUnitTestsInDirectory(initialization_directory$)
-	Dim old_directory$, message$, tests_folder_path$, cbUnitCmd_file_path$, cbUnitCmd_file, file_name$
+	Dim message$, tests_folder_path$, cbUnitCmd_file_path$, cbUnitCmd_file, file_name$
 	Dim f.File
 	
-	old_directory = CurrentDir()
 	tests_folder_path = initialization_directory + "\" + CBUNIT_TESTS_DIRECTORY
 	cbUnitCmd_file_path = initialization_directory + "\cbUnit.cmd"
 	
@@ -479,9 +478,7 @@ Function InitializeUnitTestsInDirectory(initialization_directory$)
 		MakeDir tests_folder_path
 		If IsDirectory(tests_folder_path) Then
 			// Scan *.cb files in the application directory so that we can make empty test_*.cb files in the tests directory
-			ChDir initialization_directory // ListFiles() needs this
-			ListFiles("cb", False)
-			ChDir old_directory
+			ListFiles(initialization_directory, "cb", False)
 			
 			// Create empty test_*.cb files.
 			For f = Each File
