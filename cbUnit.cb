@@ -420,9 +420,9 @@ Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
 EndFunction
 
 Function GenerateListOfTestFiles(test_paths$)
-	Dim old_directory$, count_test_paths, i, test_path$, file_name$
+	Dim count_test_paths, i, test_path$, file_name$
+	Dim found_file.FoundFile
 	
-	old_directory = CurrentDir()
 	count_test_paths = CountWords2(test_paths, "|")
 	
 	For i = 1 To count_test_paths
@@ -432,22 +432,20 @@ Function GenerateListOfTestFiles(test_paths$)
 			NewTestFile(test_path)
 		ElseIf IsDirectory(test_path) Then
 			// This path is a directory containing test_*.cb files
-			ChDir test_path
-			StartSearch
-			Repeat
-				file_name$ = FindFile()
-				If PatternCompare(CBUNIT_TEST_FILE_PATTERN, file_name, False, "*") Then
+			// Search For all *.cb files (ListFiles() does Not support filtering by prefix, so we might get files that do Not start with "test_")
+			ListFiles(test_path, "cb", True) // True: recursive search
+			For found_file = Each FoundFile
+				// Now ensure that the file has a "test_" prefix
+				If PatternCompare(CBUNIT_TEST_FILE_PATTERN, found_file\name, False, "*") Then
 					// This is a test_*.cb file
-					NewTestFile(test_path + "\" + file_name)
+					NewTestFile(found_file\absolute_path)
 				EndIf
-			Until "" = file_name
-			EndSearch
+			Next found_file
 		Else
 			// This path is wrong
 			Return HandleError("getListOfTestFiles", "File or directory "+test_path+" does n"+"ot exist.")
 		EndIf
 	Next i
-	ChDir old_directory
 EndFunction
 
 //**

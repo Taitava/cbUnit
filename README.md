@@ -70,7 +70,7 @@ Say that you have your `MyApplication` divided into multiple source code files, 
 - `MyApplication\LibraryFunctions.cb` and `MyApplication\tests\test_LibraryFunctions.cb`
 
 However, cbUnit does not force you to use any strict pattern to link your source code and test files together. The only rules for your test files are:
-- Test files must be located in `tests` folder (no case-sensitivity).
+- Test files must be located in `tests` folder (no case-sensitivity) or in any of its possible subfolders.
 - Test files' names need to start with `test_` and end with `.cb` (no case-sensitivity). A good practice is to include the related source code file's name in the test file's name, like in the examples above.
 
 cbUnit *does* read your test files, but it *never* reads your application's source code files. And it never includes them for you, so in each of your `test_*.cb` file, you will need to `Include` the application source code file(s) that you want to test in that particular test file. cbUnit *does* include its own utility functions for you, so you don't need to include anything related to cbUnit in your `test_*.cb` files. You can just directly use [all the *assert* functions provided by cbUnit](https://github.com/Taitava/cbUnit/blob/master/cbUnit.asserts.cb).
