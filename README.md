@@ -26,7 +26,29 @@ You have two ways to do this:
 
 cbUnit needs CBCompiler because it generates some simple testing framework code and builds it with your custom `test_*.cb` unit test files. We will also use the compiler to compile cbUnit's main program in the next step.
 
-### 3. Compile cbUnit.exe
+### 3. Install libraries
+
+cbUnit uses some functions from [CB Repository](http://cbrepository.com) which are already included in *Libraries\cbRepository.com.cb*. In addition to this, cbUnit uses the following libraries that need to be cloned from [GitHub](https://github.com):
+- [CommandLineArguments](https://github.com/Taitava/cb-CommandLineArguments)
+
+There are two ways to install the libraries, with Git or manually.
+
+### 3.1. Install libraries with Git
+
+1. If you don't have Git on your machine yet, you can [download Git here](https://git-scm.com/download/win).
+2. Go to `cbUnit\Install` in file explorer (or command line prompt).
+3. Run `Install-libraries.cmd`. It will execute the needed Git command for you. You can also run this again later if you want to update the libraries to newer versions. But that's only rarely needed.
+
+### 3.2. Install libraries manually
+
+1. Go to the GitHub repository page of the [CommandLineArguments](https://github.com/Taitava/cb-CommandLineArguments) library.
+2. Click *Code* -> *Download ZIP*.
+3. Go to you cbUnit's folder and then to *Libraries*. Extract the zip file there to a new folder `CommandLineArguments`.
+4. Make sure that the folder `CommandLineArguments` contains a file named `CommandLineArguments.cb`.
+
+Now you are ready to compile cbUnit.exe.
+
+### 4. Compile cbUnit.exe
 1. Go to `cbUnit\Install` in file explorer (or command line prompt).
 2. Run `Make-cbUnit.exe.cmd`. It will launch `cbUnit\CBCompiler\CBCompiler.exe` to compile `cbUnit.exe` into the main `cbUnit` folder.
 
