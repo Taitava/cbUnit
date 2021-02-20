@@ -184,13 +184,15 @@ EndFunction
 
 // The following type and two functions are copied 2021-02-20 from http://www.cbrepository.com/codes/code/14/
 // Created 2011-04-09 by: Jare
-// Modifications: Made the functions FVD compatible
-Type File
-	Field path As String
+// Modifications:
+//  - Made the functions FVD compatible.
+//  - Made it posibble to turn recursion off.
+Type File // TODO: Rename to FoundFile
+	Field path As String // TODO: Add name$ Field that contains just the file name without path
 	Field isFolder As Byte
 	Field isNew As Byte
 EndType
-Function listFiles(extension$="")
+Function listFiles(extension$="", recursive=1) // TODO: Add directory$ parameter (will be the first parameter)
 	//extension$ = which Type of files To search For. example: "txt" (without Dot). Leave empty If you want To find all files.
 
 	Dim orig_dir$, foundFiles, filename$ // Force Variable Declaration
@@ -207,7 +209,7 @@ Function listFiles(extension$="")
 			f\isFolder	= False
 			f\isNew		= True
 			foundFiles+1
-		ElseIf (IsDirectory(filename) And filename <> "." And filename <> "..") Then
+		ElseIf recursive And (IsDirectory(filename) And filename <> "." And filename <> "..") Then // Only add folders To the collection If we are going To iterate them too.
 			f.File		= New(File)
 			f\path		= CurrentDir()+filename
 			f\isFolder	= True
@@ -217,7 +219,7 @@ Function listFiles(extension$="")
 	Until filename = ""
 	EndSearch
 	
-	If foundFiles > 0 Then
+	If False = recursive And foundFiles > 0 Then
 		For f.File = Each File
 			If (f\isNew) Then
 				f\isNew = False
@@ -233,6 +235,7 @@ Function listFiles(extension$="")
 EndFunction
 Function getFileExtension(filename$)
 	Dim i, char$, extension$ // Force Variable Declaration
+	
 	For i = Len(filename) To 1 Step -1
 		char$ = Mid(filename, i,1)
 		If (char = ".") Then
