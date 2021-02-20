@@ -389,6 +389,7 @@ Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
 
 	ResetTestFunctions()
 	ResetHookFunctions()
+	ResetSettingsDefinedInTest()
 	test_file = OpenToRead(test_file_path)
 	While Not EOF(test_file)
 		line_$ = Trim(ReadLine(test_file))
@@ -578,6 +579,14 @@ Function isSettingDefinedInTest(name$)
 		Return setting\source = "test"
 	EndIf
 	Return False
+EndFunction
+
+Function ResetSettingsDefinedInTest()
+	Dim setting.cbUnit_Setting
+	
+	For setting = Each cbUnit_Setting
+		If setting\source = "test" Then Delete setting // TODO: This will have a problem in the future If settings can be defined in other places in addition To test files, because there should be a way To revert back To a previous setting that a test file's setting has just temporarily overridden.
+	Next setting
 EndFunction
 
 // Error handling
