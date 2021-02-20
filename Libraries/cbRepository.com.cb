@@ -157,3 +157,26 @@ Function CleanPath(path$, end_with_backslash=0)
 	EndIf
 	Return path
 EndFunction
+
+
+//
+// Saved 2021-02-20 to http://www.cbrepository.com/codes/code/105/ (the same time that I wrote it in this file)
+// Modifications: None
+//
+Function IsAbsolutePath(path$)
+	Dim first_character$, second_character$ // Force Variable Declaration
+	
+	If Len(path) < 2 Then Return False // A path that is so small is probably a one letter folder Or just . Or an empty String.
+	first_character = Left(path, 1)
+	second_character = Mid(path, 2,1)
+	If Asc(Upper(first_character)) >= 65 And Asc(Upper(first_character)) <= 90 And second_character = ":" Then
+		// The path is something like "C:", so it's absolute
+		Return True
+	ElseIf first_character = "\" And second_character = "\" Then
+		// The path is a network path, beginning with \\, so it's absolute
+		Return True
+	Else
+		// The path is something Else, so probably relative
+		Return False
+	EndIf
+EndFunction

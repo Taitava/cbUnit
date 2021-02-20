@@ -46,27 +46,42 @@ EndType
 
 // Main program
 Function MainProgram()
-	Dim action$
+	Dim action$, test_path$, test_paths$
 	Dim nonoption_argument.CommandLineNonOptionArgument
 	
-	DefineCommandLineOptions("*") //*: Allow non-option arguments. This is needed To be able To get test files/directories As parameters (Not implemented yet).
+	DefineCommandLineOptions("*") //*: Allow non-option arguments. This is needed To be able To get test files/directories As parameters.
 	If Not ParseCommandLineOptions() Then HandleError("MainProgram", "Syntax error in commandl"+"ine options.") 
 	
 	// Interpret CommandLine options
 	If 0 = CountCommandLineOptionsPresent Then
 		// No CommandLine _options_ are defined, but there might be some non-option arguments available (but Not always).
 		action = "run_tests"
+		
+		// Check If test paths are provided in comandline
+		If CountCommandLineNonOptionArgumentsPresent Then
+			For nonoption_argument = Each CommandLineNonOptionArgument
+				test_path = nonoption_argument\argument
+				If Not IsAbsolutePath(test_path) Then
+					test_path = cbUnit_ApplicationDirectory + "\" + test_path
+				EndIf
+				If test_paths Then test_paths + "|"
+				test_paths + test_path
+			Next nonoption_argument
+		Else
+			// Define a Default test directory
+			test_paths = cbUnit_ApplicationDirectory + "\" + CBUNIT_TESTS_DIRECTORY
+		EndIf
 	EndIf
 	
 	Select action
 	Case "run_tests"
-		RunTests()
+		RunTests(test_paths)
 	Default
 		HandleError("MainProgram", "Unrecognised commandl"+"ine options.")
 	EndSelect
 EndFunction
 
-Function RunTests()
+Function RunTests(test_paths$)
 	Dim output_file_path$, output_file, compiler_error$
 	Dim test_file.cbUnit_TestFile
 	
@@ -77,7 +92,7 @@ Function RunTests()
 	DrawScreen
 	SetWindow "cbUnit v. " + CBUNIT_VERSION
 	
-	GenerateListOfTestFiles()
+	GenerateListOfTestFiles(test_paths)
 	
 	// Reset output log file
 	output_file_path$ = cbUnit_Directory(True) + CBUNIT_TEST_PROGRAM_OUTPUT_FILE_NAME
@@ -394,22 +409,34 @@ Function GenerateListOfTestFunctionsAndConstants(test_file_path$)
 	CloseFile test_file
 EndFunction
 
-Function GenerateListOfTestFiles()
-	Dim old_directory$, tests_directory_path$, file_name$
+Function GenerateListOfTestFiles(test_paths$)
+	Dim old_directory$, count_test_paths, i, test_path$, file_name$
 	
 	old_directory = CurrentDir()
-	tests_directory_path$ = cbUnit_ApplicationDirectory + "\" + CBUNIT_TESTS_DIRECTORY
-	If Not IsDirectory(tests_directory_path) Then Return HandleError("getListOfTestFiles", "Directory "+tests_directory_path+" does n"+"ot exist.")
-	ChDir tests_directory_path
-	StartSearch
-	Repeat
-		file_name$ = FindFile()
-		If PatternCompare(CBUNIT_TEST_FILE_PATTERN, file_name, False, "*") Then
-			// This is a test_*.cb file
-			NewTestFile(tests_directory_path + "\" + file_name)
+	count_test_paths = CountWords2(test_paths, "|")
+	
+	For i = 1 To count_test_paths
+		test_path$ = GetWord2(test_paths, i, "|")
+		If FileExists(test_path) And False=IsDirectory(test_path) Then
+			// This path is a single test_*.cb file
+			NewTestFile(test_path)
+		ElseIf IsDirectory(test_path) Then
+			// This path is a directory containing test_*.cb files
+			ChDir test_path
+			StartSearch
+			Repeat
+				file_name$ = FindFile()
+				If PatternCompare(CBUNIT_TEST_FILE_PATTERN, file_name, False, "*") Then
+					// This is a test_*.cb file
+					NewTestFile(test_path + "\" + file_name)
+				EndIf
+			Until "" = file_name
+			EndSearch
+		Else
+			// This path is wrong
+			Return HandleError("getListOfTestFiles", "File or directory "+test_path+" does n"+"ot exist.")
 		EndIf
-	Until "" = file_name
-	EndSearch
+	Next i
 	ChDir old_directory
 EndFunction
 

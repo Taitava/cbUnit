@@ -133,9 +133,15 @@ Running tests is really simple:
 3. cbUnit will read all your `tests\test_*.cb` files. Each one will be compiled and run **one at a time**. Multiple test files are **not** compiled into one program! So different test files can define similarly named functions, variables etc.
 4. After executing all test files, cbUnit will open a report text file in your favorite text editor and quit.
 
-There is currently no way to select which test file(s) will be run. cbUnit runs all of them, but this may change in the future.
-
 If you have made a syntax error (in a `test_*.cb` file or in your application code), CBCompiler will alert you with a popup error box, but in addition to this, the report file that cbUnit creates for you, contains the same compile error. If you have multiple `test_*.cb` files, cbUnit will continue to compile and run other test files after the failing one. It might result in multiple failing compiles if the syntax error happens to be in your application code, and not in a single test file.
+
+### Selecting specific test files to be run
+You can execute `cbUnit.exe` with explicit paths to the test files or folders that you want to run. Examples:
+- `cbUnit.exe tests\test_ASpecificTestFile.cb` will run a single test file.
+- `cbUnit.exe "C:\Program Files (x86)\CoolBasic\Projects\MyOtherApplication\tests"` will run all test files in a specific folder. Note that you need to use double quotes if the path contains spaces.
+- `cbUnit.exe tests\test_1.cb tests\test_2.cb` will run two specific test files and combine the results into the same report.
+
+Note that if the paths are relative, they always refer to the directory where you are currently executing `cbUnit.exe` from, not to `cbUnit.exe`'s location (unless you are e.g. double clicking `cbUnit.exe` in file explorer)!
 
 ## Settings
 ### In test_*.cb files
