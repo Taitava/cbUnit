@@ -46,7 +46,7 @@ EndType
 
 // Main program
 Function MainProgram()
-	Dim action$, test_path$, test_paths$
+	Dim test_path$, test_paths$
 	Dim nonoption_argument.CommandLineNonOptionArgument
 	
 	DefineCommandLineOptions("*") //*: Allow non-option arguments. This is needed To be able To get test files/directories As parameters.
@@ -55,9 +55,7 @@ Function MainProgram()
 	// Interpret CommandLine options
 	If 0 = CountCommandLineOptionsPresent Then
 		// No CommandLine _options_ are defined, but there might be some non-option arguments available (but Not always).
-		action = "run_tests"
-		
-		// Check If test paths are provided in comandline
+		// Check If test paths are provided in non-option arguments
 		If CountCommandLineNonOptionArgumentsPresent Then
 			For nonoption_argument = Each CommandLineNonOptionArgument
 				test_path = nonoption_argument\argument
@@ -71,14 +69,12 @@ Function MainProgram()
 			// Define a Default test directory
 			test_paths = cbUnit_ApplicationDirectory + "\" + CBUNIT_TESTS_DIRECTORY
 		EndIf
-	EndIf
-	
-	Select action
-	Case "run_tests"
+		
+		// Run the tests
 		RunTests(test_paths)
-	Default
+	Else
 		HandleError("MainProgram", "Unrecognised commandl"+"ine options.")
-	EndSelect
+	EndIf
 EndFunction
 
 Function RunTests(test_paths$)
