@@ -46,10 +46,10 @@ EndType
 
 // Main program
 Function MainProgram()
-	Dim test_path$, test_paths$
+	Dim test_path$, test_paths$, initialization_directory$
 	Dim nonoption_argument.CommandLineNonOptionArgument
 	
-	DefineCommandLineOptions("*") //*: Allow non-option arguments. This is needed To be able To get test files/directories As parameters.
+	DefineCommandLineOptions("--init *") //*: Allow non-option arguments. This is needed To be able To get test files/directories As parameters.
 	If Not ParseCommandLineOptions() Then HandleError("MainProgram", "Syntax error in commandl"+"ine options.") 
 	
 	// Interpret CommandLine options
@@ -72,6 +72,20 @@ Function MainProgram()
 		
 		// Run the tests
 		RunTests(test_paths)
+		
+	ElseIf isCommandLineOptionPresent("--init") Then
+		// Initialize unit tests in an application directory. This means To create a "tests" folder And a "cbUnit.cmd" file.
+		
+		// Check If the application directory is defined in non-option arguments.
+		If CountCommandLineNonOptionArgumentsPresent Then
+			nonoption_argument = First(CommandLineNonOptionArgument)
+			initialization_directory = nonoption_argument\argument
+		Else
+			initialization_directory = cbUnit_ApplicationDirectory
+		EndIf
+		
+		MakeError InitializeUnitTestsInDirectory(initialization_directory) // MakeError: Display the message InitializeUnitTestsInDirectory() gives us.
+	
 	Else
 		HandleError("MainProgram", "Unrecognised commandl"+"ine options.")
 	EndIf
@@ -434,6 +448,55 @@ Function GenerateListOfTestFiles(test_paths$)
 		EndIf
 	Next i
 	ChDir old_directory
+EndFunction
+
+//**
+// @param string initialization_directory An absolute path to the directory where "tests" folder and "cbUnit.cmd" file will be created.
+//*
+Function InitializeUnitTestsInDirectory(initialization_directory$)
+	Dim old_directory$, message$, tests_folder_path$, cbUnitCmd_file_path$, cbUnitCmd_file, file_name$
+	Dim f.File
+	
+	old_directory = CurrentDir()
+	tests_folder_path = initialization_directory + "\" + CBUNIT_TESTS_DIRECTORY
+	cbUnitCmd_file_path = initialization_directory + "\cbUnit.cmd"
+	
+	If FileExists(cbUnitCmd_file_path) Then
+		message = message + "'cbUnit.cmd' already exists here: " + cbUnitCmd_file_path + cbUnit_EOL
+	Else
+		cbUnitCmd_file = OpenToWrite(cbUnitCmd_file_path)
+		WriteLine cbUnitCmd_file, "rem Execute cbUnit.exe. It will run test files located in: "+tests_folder_path
+		WriteLine cbUnitCmd_file, "start " + cbUnit_Quote+cbUnit_Quote + " "+GetEXEName()
+		CloseFile cbUnitCmd_file
+		message = message + "'cbUnit.cmd' is now created t"+"o: " + cbUnitCmd_file_path + cbUnit_EOL
+	EndIf
+	
+	message = message + cbUnit_EOL
+	
+	If FileExists(tests_folder_path) Then
+		message = message + "'tests' folder already exists here: " + tests_folder_path + cbUnit_EOL
+	Else
+		MakeDir tests_folder_path
+		If IsDirectory(tests_folder_path) Then
+			// Scan *.cb files in the application directory so that we can make empty test_*.cb files in the tests directory
+			ChDir initialization_directory // ListFiles() needs this
+			ListFiles("cb", False)
+			ChDir old_directory
+			
+			// Create empty test_*.cb files.
+			For f = Each File
+				file_name = GetWord2(f\path, CountWords2(f\path, "\"), "\") // Remove absolute path.
+				file_name = "test_"+file_name // It already has the .cb extension.
+				CloseFile OpenToWrite(tests_folder_path + "\" + file_name)
+			Next f
+			
+			message = message + "'tests' folder is now created t"+"o: " + tests_folder_path + cbUnit_EOL
+		Else
+			message = message + "Unable t"+"o create 'tests' folder t"+"o: " + tests_folder_path + cbUnit_EOL
+		EndIf
+	EndIf
+	
+	Return message
 EndFunction
 
 // Type handling

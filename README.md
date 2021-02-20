@@ -57,7 +57,13 @@ If you happen to make some changes to `cbUnit.cb` source code file, then you can
 The installation is now done.
 
 ## Creating `test_*.cb` files
-Let's assume that you have a CB project application located somewhere on your computer, e.g. *C:\\Program Files (x86)\\CoolBasic\\Projects\\MyApplication*. In that directory, create a folder named `tests` . So it will be something like *C:\\Program Files (x86)\\CoolBasic\\Projects\\MyApplication\\tests\\*. 
+Let's assume that you have a CB project application located somewhere on your computer, e.g. *C:\\Program Files (x86)\\CoolBasic\\Projects\\MyApplication*.
+
+You can either create test files manually, or if you do not yet have a `tests` folder in your application directory, you can let cbUnit create one for you automatically with some empty test file(s) in it.
+
+**Automatically**: Execute `cbUnit.exe --init "C:\Program Files (x86)\CoolBasic\Projects\MyApplication"`. This will create a `tests` folder for you. The folder will automatically contain empty `test_*.cb` files that are named similarly to any `*.cb` files found in your application's root directory. You can then freely decide if you will use those files or delete them and create test files with other names. The `cbUnit.exe --init` call also creates a handy `cbUnit.cmd` file that you can execute to run your test files when they are ready.
+
+**Manually**: In your application directory, create a folder named `tests` . So it will be something like *C:\\Program Files (x86)\\CoolBasic\\Projects\\MyApplication\\tests\\*. 
 
 Say that you have your `MyApplication` divided into multiple source code files, and you want to write some tests for each one of them. A good practice is to create one test file per one application source code file. You could have e.g.:
 - `MyApplication\MainProgram.cb` and `MyApplication\tests\test_MainProgram.cb`
@@ -128,7 +134,7 @@ Return values of the hook functions are not used for anything.
 
 ## Running tests
 Running tests is really simple:
-1. If you have not already done so, in your application's root folder, create a file named `cbUnit.cmd`  (or you can decide another name for it if you wish). Edit it and add the following line: `start "cbUnit" "C:\Program Files (x86)\CoolBasic\cbUnit\cbUnit.exe"` (or whatever is the path to your *CoolBasic* directory). This *.cmd*-file works now as your link to start cbUnit.
+1. If you have not already done so, in your application's root folder, create a file named `cbUnit.cmd`  (or you can decide another name for it if you wish). Edit it and add the following line: `start "cbUnit" "C:\Program Files (x86)\CoolBasic\cbUnit\cbUnit.exe"` (or whatever is the path to your *CoolBasic* directory). This *.cmd*-file works now as your link to start cbUnit. (Note: instead of creating `cbUnit.cmd` manually, you can also execute `cbUnit.exe --init "C:\Program Files (x86)\CoolBasic\Projects\MyApplication"` to create it automatically for you).
 2. Run `cbUnit.cmd`. cbUnit will automatically know in which folder the calling `cbUnit.cmd` file resides and starts to test that application.
 3. cbUnit will read all your `tests\test_*.cb` files. Each one will be compiled and run **one at a time**. Multiple test files are **not** compiled into one program! So different test files can define similarly named functions, variables etc.
 4. After executing all test files, cbUnit will open a report text file in your favorite text editor and quit.
