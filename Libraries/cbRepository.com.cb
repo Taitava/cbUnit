@@ -180,3 +180,61 @@ Function IsAbsolutePath(path$)
 		Return False
 	EndIf
 EndFunction
+
+
+// The following type and two functions are copied 2021-02-20 from http://www.cbrepository.com/codes/code/14/
+// Created 2011-04-09 by: Jare
+// Modifications: none
+Type File
+	Field path As String
+	Field isFolder As Byte
+	Field isNew As Byte
+EndType
+Function listFiles(extension$="")
+	//extension$ = which Type of files To search For. example: "txt" (without Dot). Leave empty If you want To find all files.
+	orig_dir$ = CurrentDir()
+	StartSearch
+	foundFiles = 0
+	Repeat
+		filename$ = FindFile()
+		If IsDirectory(filename)=False And (Lower(Str(getFileExtension(filename))) = extension Or extension = "") Then
+			f.File		= New(File)
+			f\path		= CurrentDir()+filename
+			f\isFolder	= False
+			f\isNew		= True
+			foundFiles+1
+		ElseIf (IsDirectory(filename) And filename <> "." And filename <> "..") Then
+			f.File		= New(File)
+			f\path		= CurrentDir()+filename
+			f\isFolder	= True
+			f\isNew		= True
+			foundFiles+1 'although this is a directory (Not a file), we will COUNT it As a file
+		EndIf
+	Until filename = ""
+	EndSearch
+	
+	If foundFiles > 0 Then
+		For f.File = Each File
+			If (f\isNew) Then
+				f\isNew = False
+				If (f\isFolder) Then
+					ChDir f\path
+					listFiles(extension)
+				EndIf
+			EndIf
+		Next f
+	EndIf
+	
+	ChDir orig_dir
+EndFunction
+Function getFileExtension(filename$)
+	For i = Len(filename) To 1 Step -1
+		char$ = Mid(filename, i,1)
+		If (char = ".") Then
+			Return extension$
+		Else
+			extension = char + extension
+		EndIf
+	Next i
+	Return "" 'No extension
+EndFunction
