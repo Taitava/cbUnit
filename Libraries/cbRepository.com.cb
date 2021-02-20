@@ -188,6 +188,7 @@ EndFunction
 //  - Made the functions FVD compatible.
 //  - Made it posibble to turn recursion off.
 //  - Changed File\path field to absolute_path and added name and directory fields.
+//  - Added reset parameter
 Type File // TODO: Rename to FoundFile
 	Field name As String
 	Field directory As String
@@ -195,11 +196,18 @@ Type File // TODO: Rename to FoundFile
 	Field isFolder As Byte
 	Field isNew As Byte
 EndType
-Function listFiles(extension$="", recursive=1) // TODO: Add directory$ parameter (will be the first parameter)
+Function listFiles(extension$="", recursive=1, reset=1) // TODO: Add directory$ parameter (will be the first parameter)
 	//extension$ = which Type of files To search For. example: "txt" (without Dot). Leave empty If you want To find all files.
 
 	Dim orig_dir$, foundFiles, filename$ // Force Variable Declaration
 	Dim f.File
+	
+	If reset Then
+		// Forget old files
+		For f.File = Each File
+			Delete f
+		Next f
+	EndIf
 	
 	orig_dir$ = CurrentDir()
 	StartSearch
@@ -232,7 +240,7 @@ Function listFiles(extension$="", recursive=1) // TODO: Add directory$ parameter
 				f\isNew = False
 				If (f\isFolder) Then
 					ChDir f\absolute_path
-					listFiles(extension)
+					listFiles(extension, True, False)
 				EndIf
 			EndIf
 		Next f
