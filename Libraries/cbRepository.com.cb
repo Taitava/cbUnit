@@ -189,19 +189,24 @@ EndFunction
 //  - Made it posibble to turn recursion off.
 //  - Changed File\path field to absolute_path and added name and directory fields.
 //  - Renamed File type to FoundFile
+//  - Separated folders from FoundFile type list and created a new type for them: FoundFolder
 //  - Added directory and reset parameters
 Type FoundFile
 	Field name As String
 	Field directory As String
 	Field absolute_path As String
-	Field isFolder As Byte
+EndType
+Type FoundFolder
+	Field name As String
+	Field directory As String
+	Field absolute_path As String
 	Field isNew As Byte
 EndType
 Function listFiles(directory$="", extension$="", recursive=1, reset=1)
 	//extension$ = which Type of files To search For. example: "txt" (without Dot). Leave empty If you want To find all files.
 
-	Dim orig_dir$, foundFiles, filename$ // Force Variable Declaration
-	Dim f.FoundFile
+	Dim orig_dir$, filename$ // Force Variable Declaration
+	Dim f.FoundFile, fo.FoundFolder
 	
 	If reset Then
 		// Forget old files
@@ -214,7 +219,6 @@ Function listFiles(directory$="", extension$="", recursive=1, reset=1)
 	If Not IsDirectory(directory) Then Return False
 	ChDir directory
 	StartSearch
-	foundFiles = 0
 	Repeat
 		filename$ = FindFile()
 		If IsDirectory(filename)=False And (Lower(Str(getFileExtension(filename))) = extension Or extension = "") Then
@@ -222,30 +226,23 @@ Function listFiles(directory$="", extension$="", recursive=1, reset=1)
 			f\name			= filename
 			f\directory		= CurrentDir()
 			f\absolute_path = CurrentDir()+filename
-			f\isFolder		= False
-			f\isNew			= True
-			foundFiles+1
-		ElseIf recursive And (IsDirectory(filename) And filename <> "." And filename <> "..") Then // Only add folders To the collection If we are going To iterate them too.
-			f				= New(FoundFile)
-			f\name			= filename
-			f\directory		= CurrentDir()
-			f\absolute_path = CurrentDir()+filename
-			f\isFolder		= True
-			f\isNew			= True
-			foundFiles+1 'although this is a directory (Not a file), we will COUNT it As a file
+		ElseIf (IsDirectory(filename) And filename <> "." And filename <> "..") Then
+			fo				= New(FoundFolder)
+			fo\name			= filename
+			fo\directory	= CurrentDir()
+			fo\absolute_path= CurrentDir()+filename
+			fo\isNew		= True
 		EndIf
 	Until filename = ""
 	EndSearch
 	
-	If False = recursive And foundFiles > 0 Then
-		For f = Each FoundFile
-			If (f\isNew) Then
-				f\isNew = False
-				If (f\isFolder) Then
-					listFiles(f\absolute_path, extension, True, False)
-				EndIf
+	If False = recursive Then
+		For fo = Each FoundFolder
+			If (fo\isNew) Then
+				fo\isNew = False
+				listFiles(fo\absolute_path, extension, True, False)
 			EndIf
-		Next f
+		Next fo
 	EndIf
 	
 	ChDir orig_dir
