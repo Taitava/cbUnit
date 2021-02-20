@@ -236,7 +236,7 @@ Function listFiles(directory$="", extension$="", recursive=1, reset=1)
 	Until filename = ""
 	EndSearch
 	
-	If False = recursive Then
+	If recursive Then
 		For fo = Each FoundFolder
 			If (fo\isNew) Then
 				fo\isNew = False
