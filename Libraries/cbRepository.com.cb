@@ -183,14 +183,8 @@ EndFunction
 
 
 // The following type and two functions are copied 2021-02-20 from http://www.cbrepository.com/codes/code/14/
-// Created 2011-04-09 by: Jare
-// Modifications:
-//  - Made the functions FVD compatible.
-//  - Made it posibble to turn recursion off.
-//  - Changed File\path field to absolute_path and added name and directory fields.
-//  - Renamed File type to FoundFile
-//  - Separated folders from FoundFile type list and created a new type for them: FoundFolder
-//  - Added directory and reset parameters
+// Created 2011-04-09 by: Jare (edited 2021-02-20)
+// Modifications: None because all modifications are now saved back to cbrepository.com
 Type FoundFile
 	Field name As String
 	Field directory As String
