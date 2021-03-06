@@ -52,7 +52,7 @@ Function cbUnit_Fail(message$)
 	failure\message = message
 EndFunction
 
-Function cbUnit_Substitute(message$, a$, b$="", c$="",d$="")
+Function cbUnit_FillMessage(message$, a$, b$="", c$="",d$="")
 	message = Replace(message, "a$", a)
 	message = Replace(message, "b$", b)
 	message = Replace(message, "c$", c)
