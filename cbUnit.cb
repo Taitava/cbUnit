@@ -49,7 +49,7 @@ Function MainProgram()
 	Dim test_path$, test_paths$, initialization_directory$
 	Dim nonoption_argument.CommandLineNonOptionArgument
 	
-	DefineCommandLineOptions("--init *") //*: Allow non-option arguments. This is needed To be able To get test files/directories As parameters.
+	DefineCommandLineOptions("--init", True) // True: Allow non-option arguments. This is needed To be able To get test files/directories As parameters.
 	If Not ParseCommandLineOptions() Then HandleError("MainProgram", "Syntax error in commandl"+"ine options.") 
 	
 	// Interpret CommandLine options
