@@ -222,7 +222,7 @@ Function CompileAndRun(command_line_parameters$)
 EndFunction
 
 Function InspectCompileLog(compiler_log_path$, delete_log=0)
-	Dim compiler_log, header$, line_$, subject$, value$, error_code, error_module$, error_line, error_detail$, indent$, result$
+	Dim compiler_log, header$, line_$, subject$, value$, error_code, error_module$, error_line, error_detail$, error_source_code$, indent$, result$
 	// Force Variable Declaration example of CompileLog.txt (no indentation):
 	//   ERROR
 	//   code 37
@@ -262,6 +262,20 @@ Function InspectCompileLog(compiler_log_path$, delete_log=0)
 			EndSelect
 		Wend
 		
+		// If we have both error_module And error_line, "sneak peak" the problematic source code Line so that it can be added To the result message.
+		error_source_code = ""
+		If error_module And error_line Then
+			error_source_code = ReadLineFromFile(error_module, error_line, "", "")
+			If error_detail Then
+				// Check that CBCompiler has given us a correct file path by comparing the error detail (If we happen To have one) To the problematic source code Line.
+				If Not PatternCompare("*"+error_detail+"*", error_source_code, False) Then
+					// CBCompiler has probably indicated a wrong source code file.
+					error_source_code = "CBCompiler reported a wrong source code file! <"
+					// TODO: We could also try If we can find the problem from the current test_*.cb file. But that would Not cover cases where the syntax error is located in the application code.
+				EndIf
+			EndIf
+		EndIf
+		
 		// Generate a human readable message
 		indent = "  "
 		result = indent + "Compile error "+error_code+": " + getCompilerError(error_code, error_detail) + cbUnit_EOL
@@ -272,6 +286,7 @@ Function InspectCompileLog(compiler_log_path$, delete_log=0)
 		ElseIf error_module
 			result = result + indent + "in " + error_module + cbUnit_EOL
 		EndIf
+		If error_source_code Then result = result + indent + " > " + error_source_code + cbUnit_EOL // A preview of the problematic source code Line.
 		
 	Else
 		// Compilation was successful

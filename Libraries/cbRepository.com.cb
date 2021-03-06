@@ -255,3 +255,35 @@ Function getFileExtension(filename$)
 	Next i
 	Return "" 'No extension
 EndFunction
+
+
+// Saved 2021-03-06 to http://www.cbrepository.com/codes/code/106/ (the same time that I wrote it in this file)
+// Modifications: None
+//
+// Opens a file in read mode and finds the desired line number and returns the line string.
+// Parameters:
+// - file_path$: The file name that should be read.
+// - line_number: The line number that we want to get. Starts from one. Defaults to one.
+// - if_no_file: What to return if the file does not exist. Defaults to an empty string.
+// - if_no_line: What to return if the file exists but if it does not have enough lines. Defaults to an empty string.
+//
+Function ReadLineFromFile(file_path$, line_number = 1, if_no_file$="", if_no_line$="")
+	Dim file, current_line$, current_line_number
+	
+	If FileExists(file_path) Then
+		file = OpenToRead(file_path)
+		current_line_number = 0
+		While Not EOF(file)
+			current_line = ReadLine(file)
+			current_line_number + 1
+			If current_line_number = line_number Then
+				CloseFile file
+				Return current_line
+			EndIf
+		Wend
+		CloseFile file
+		Return if_no_line
+	Else
+		Return if_no_file
+	EndIf
+EndFunction
