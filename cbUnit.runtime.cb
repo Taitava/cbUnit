@@ -52,7 +52,15 @@ Function cbUnit_Fail(message$)
 	failure\message = message
 EndFunction
 
-Function cbUnit_FillMessage(message$, a$, b$="", c$="",d$="")
+Function cbUnit_FillMessage(message$, default_message$, a$, b$="", c$="",d$="")
+	If "" = message Then
+		// We only have a Default message, defined in an assert*() Function.
+		message = default_message
+	Else
+		// We have a custom message in addition To the Default one.
+		// Use the custom message As a primary message And append the Default message To the End in parenthesis.
+		message = message + " (" + default_message + ")"
+	EndIf
 	message = Replace(message, "a$", a)
 	message = Replace(message, "b$", b)
 	message = Replace(message, "c$", c)
