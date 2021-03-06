@@ -149,12 +149,19 @@ You can execute `cbUnit.exe` with explicit paths to the test files or folders th
 
 Note that if the paths are relative, they always refer to the directory where you are currently executing `cbUnit.exe` from, not to `cbUnit.exe`'s location (unless you are e.g. double clicking `cbUnit.exe` in file explorer)!
 
+### Passing command line arguments
+You can pass command line arguments to your application while testing via two ways:
+1. Call `cbUnit.exe -- Some command line arguments`. The two dashes indicates that the rest of the command line should be passed as-is to the CommandLine() of your application.
+2. **Or**: Define `Const CBUNIT_COMMANDLINE = "Some command line arguments"` in your `test_*.cb` file.
+
+If both of these are present, only the first one will be used.
+
 ## Settings
 ### In test_*.cb files
 
 Setting | Possible values | Description
 --------|-----------------|------------
-CBUNIT_COMMANDLINE<br>*class*: **synthetic** | (any string) Default: `""` (an empty string) | This string will be available via CommandLine() in your application and test file.
+CBUNIT_COMMANDLINE<br>*class*: **synthetic** | (any string) Default: `""` (an empty string) | This string will be available via CommandLine() in your application and test file. Note that if you execute `cbRun.exe -- with a double-dash option`, the string trailing `--` will be used instead of the `CBUNIT_COMMANDLINE` constant.
 CBUNIT_FORCE_VARIABLE_DECLARATION<br>*class*: **synthetic** | `0` or `1`. Default: `0` | Whether to use the CBCompiler's FVD option to require that all variables used in the program should be predefined (e.g. with `Dim`) before usage. Very powerful for preventing bugs caused by typos in variable names, but in addition to the fact that your test files need to adhere to FVD, also your whole application needs to adhere to it.
 CBUNIT_STOP_AT<br>*class*: **runtime** | `"ASSERT"`, `"FUNCTION"`, `""` <br> Default: `""` (an empty string) | Defines how failures are tolerated. ASSERT: Prevent further testing immediately when an assertion fails. FUNCTION: When an assertion fails, complete the current test_*() function but stop after that. "" or anything else: do not stop (default behaviour). Note that this setting does not prevent the test program from executing other test_*.cb files!
 

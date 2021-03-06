@@ -49,7 +49,7 @@ Function MainProgram()
 	Dim test_path$, test_paths$, initialization_directory$
 	Dim nonoption_argument.CommandLineNonOptionArgument
 	
-	DefineCommandLineOptions("--init", True) // True: Allow non-option arguments. This is needed To be able To get test files/directories As parameters.
+	DefineCommandLineOptions("--init", True, True) // First True: Allow non-option arguments. This is needed To be able To get test files/directories As parameters. Second True: enable -- command Line option that can be used To define the the rest of the command Line String should be Read As a single argument. We will use this To pass an optional command Line String To the testable application.
 	If Not ParseCommandLineOptions() Then HandleError("MainProgram", "Syntax error in commandl"+"ine options.") 
 	
 	// Interpret CommandLine options
@@ -92,7 +92,7 @@ Function MainProgram()
 EndFunction
 
 Function RunTests(test_paths$)
-	Dim output_file_path$, output_file, compiler_error$
+	Dim output_file_path$, output_file, pass_command_line$, compiler_error$
 	Dim test_file.cbUnit_TestFile
 	
 	SCREEN TextWidth("Compiling a"+"nd running tests..."), TextHeight("H")
@@ -115,8 +115,14 @@ Function RunTests(test_paths$)
 		GenerateListOfTestFunctionsAndConstants(test_file\path) // ScaffoldTestProgram() needs this
 		ScaffoldTestProgram(test_file\path, output_file_path, cbUnit_ApplicationDirectory)
 		
+		// Get possible command Line arguments that should be passed To the test program
+		// 1. Try To get the from cbUnit's command Line.
+		// 2. If command Line did Not have them, try To get them from the test_*.cb condifuration constants.
+		// 3. If still Not found, we can use an empty String, meaning no command Line arguments are used.
+		pass_command_line = getCommandLineArgument("--", getSetting("CommandLine", ""))
+		
 		// Compile and run the test program
-		compiler_error = CompileAndRun()
+		compiler_error = CompileAndRun(pass_command_line)
 		
 		// Write a possible compile error To the output file
 		If compiler_error Then
@@ -151,8 +157,8 @@ Function cbUnit_Directory(end_with_backslash=0)
 EndFunction
 
 // Compiling
-Function CompileAndRun()
-	Dim force_variable_declaration, instructions, command_line_parameters$, cmd, signal_file_path$, compiler_log_path$
+Function CompileAndRun(command_line_parameters$)
+	Dim force_variable_declaration, instructions, cmd, signal_file_path$, compiler_log_path$
 
 	// Write instructions For CBCompiler
 	force_variable_declaration = getSetting("FORCE_VARIABLE_DECLARATION")
@@ -164,7 +170,6 @@ Function CompileAndRun()
 	CloseFile instructions
 	
 	// Create a .cmd file that will call the compiler, Wait that it finishes, and then call the test program And Wait that it finishes, And Then Delete a signal file.
-	command_line_parameters$ = getSetting("CommandLine", "")
 	cmd = OpenToWrite(cbUnit_Directory(True)+"CBCompiler\call_compiler.cmd")
 	WriteLine cmd, "@echo OFF"
 	WriteLine cmd, "echo Preparations..."
