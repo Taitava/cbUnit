@@ -4,11 +4,22 @@
 // Variables:
 // @ test_function_name: string, a function name that we should call. It contains a test that either fails or succeeds.
 
+// Prevent running the test call If a previous test has failed And If a setting orders us To do so.
 If Upper(Str(CBUNIT_STOP_AT)) = "F"+"UNCTION" Then
-	If cbUnit_HasFailures() Then cbUnit_EndProgram() // Prevent running the test call If previous tests have Not failed And If a setting orders us To do so.
+	If cbUnit_HasFailures Then cbUnit_EndProgram()
 EndIf
 
-cbUnit_SetCurrentContext("@test_function_name") // If failures happen, we will know under which test_*() Function they happened.
-hook_SetupTest("@test_function_name") // Hook for test_*.cb to do preparations.
+// Hook for test_*.cb to do preparations.
+cbUnit_SetCurrentContext("hook_SetupTest")
+hook_SetupTest("@test_function_name")
+
+// Call the actual test_*() function
+cbUnit_SetCurrentContext("@test_function_name") // If failures happen, we will know under which test_*() Function they happened. Also applies to crashes (e.g. MAV).
 @test_function_name()
-hook_CleanupTest("@test_function_name") // Hook for test_*.cb to do cleanup.
+
+// Hook for test_*.cb to do cleanup.
+cbUnit_SetCurrentContext("hook_CleanupTest")
+hook_CleanupTest("@test_function_name")
+
+// Mark that we are now outside of any functions.
+cbUnit_SetCurrentContext("")

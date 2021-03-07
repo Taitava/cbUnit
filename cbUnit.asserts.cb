@@ -9,20 +9,19 @@
 // 'Not' functions should have the 'Not' appear right after 'Assert'! For example, correct: AssertNotFileExists(), incorrect: AssertFileNotExists()
 
 Function Assert(condition, message$, default_message$="", a$="",b$="",c$="",d$="")
-	Dim app.cbUnit_Application
-	
-	app = cbUnit_GetApplication()
-	app\count_tests = app\count_tests + 1
 	If condition Then
 		// Test succeeded
-		app\count_successes = app\count_successes + 1
+		cbUnit_WriteMessage(CBUNIT_MESSAGE_SUCCESS)
 		Return True
 	Else
 		// Test failed
-		app\count_failures = app\count_failures + 1
-		cbUnit_Fail(cbUnit_FillMessage(message, default_message, a,b,c,d))
+		message = cbUnit_FillMessage(message, default_message, a,b,c,d)
+		cbUnit_WriteMessage(CBUNIT_MESSAGE_FAILURE, message)
+		cbUnit_HasFailures = True
 		If Upper(Str(CBUNIT_STOP_AT)) = "ASSERT" Then
-			hook_CleanupTest(app\current_context) // Hook For test_*.cb To do cleanup. Not called in cbUnit_EndProgram() because otherwise the hook would be called twice For the Last test Function of the file, because test-call.skeleton.cb calls this too.
+			cbUnit_SetCurrentContext("hook_CleanupTest")
+			hook_CleanupTest(cbUnit_CurrentContext) // Hook For test_*.cb To do cleanup. Not called in cbUnit_EndProgram() because otherwise the hook would be called twice For the Last test Function of the file, because test-call.skeleton.cb calls this too.
+			cbUnit_SetCurrentContext("")
 			cbUnit_EndProgram()
 		EndIf
 		Return False

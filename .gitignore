@@ -1,3 +1,4 @@
 /.obsidian
 *.exe
-cbUnit.results.txt
+cbUnit.report.txt
+cbUnit.test.dat

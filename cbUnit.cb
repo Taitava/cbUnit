@@ -8,13 +8,19 @@ Const CBUNIT_VERSION = "0.0.0"
 Const CBUNIT_TESTS_DIRECTORY = "tests"
 Const CBUNIT_TEST_FILE_PATTERN = "test_*.cb"
 Const CBUNIT_TEST_PROGRAM_FILE_NAME = "CBCompiler\Editor.out" // Our final test program will be written to this file. CBCompiler.exe expects exactly this file name.
-Const CBUNIT_TEST_PROGRAM_OUTPUT_FILE_NAME = "cbUnit.results.txt" // Our final test program will write its test results to this file
+Const CBUNIT_TEST_PROGRAM_OUTPUT_FILE_NAME = "cbUnit.test.dat" // Test program writes its messages here so that cbUnit can read them and generate a report.
+Const CBUNIT_REPORT_FILE_NAME = "cbUnit.report.txt" // Will contain a human readable result of the tests.
 Const CBUNIT_TEST_FUNCTION_PATTERN = "Function test_*(*"
 Const CBUNIT_HOOK_FUNCTION_PATTERN = "Function hook_*(*"
 Const CBUNIT_HOOK_FUNCTION_NAMES = "hook_Setup:0 hook_SetupTest:1 hook_Cleanup:0 hook_CleanupTest:1" // Number :x at the end of each function name tells the number of parameters the function takes. Needed when defining empty functions.
 Const CBUNIT_CONSTANT_PATTERN = "Const CBUNIT_*=*"
 Const CBUNIT_TEST_MAIN_SKELETON = "test-main.skeleton.cb"
 Const CBUNIT_TEST_CALL_SKELETON = "test-call.skeleton.cb"
+
+Const CBUNIT_MESSAGE_CONTEXT = 1
+Const CBUNIT_MESSAGE_FAILURE = 2
+Const CBUNIT_MESSAGE_SUCCESS = 3
+Const CBUNIT_MESSAGE_FINISH = 4
 
 Global cbUnit_StartingDirectory$ : cbUnit_StartingDirectory = CurrentDir()
 Global cbUnit_ApplicationDirectory$ : cbUnit_ApplicationDirectory = CleanPath(cbUnit_StartingDirectory) // Directory where the testable application lives. If cbUnit was started from commandline or via a cmd file, CurrentDir() contains a path to where the call originated.
@@ -42,6 +48,13 @@ Type cbUnit_Setting
 	Field name$
 	Field value$
 	Field source$
+EndType
+
+// Constains messages read from a file written by a test application.
+Type cbUnit_Message
+	Field message_type
+	Field message_context$
+	Field message_content$
 EndType
 
 // Main program
@@ -92,7 +105,7 @@ Function MainProgram()
 EndFunction
 
 Function RunTests(test_paths$)
-	Dim output_file_path$, output_file, pass_command_line$, compiler_error$
+	Dim report_file_path$, report_file, output_file_path$, pass_command_line$, compiler_error$
 	Dim test_file.cbUnit_TestFile
 	
 	SCREEN TextWidth("Compiling a"+"nd running tests..."), TextHeight("H")
@@ -104,14 +117,19 @@ Function RunTests(test_paths$)
 	
 	GenerateListOfTestFiles(test_paths)
 	
-	// Reset output log file
-	output_file_path$ = cbUnit_Directory(True) + CBUNIT_TEST_PROGRAM_OUTPUT_FILE_NAME
-	output_file = OpenToWrite(output_file_path)
-	WriteLine output_file, "cbUnit test result " + Date() + " " + Time() + ":"
-	CloseFile output_file
+	// Reset report file
+	report_file_path = cbUnit_Directory(True) + CBUNIT_REPORT_FILE_NAME
+	report_file = OpenToWrite(report_file_path)
+	WriteLine report_file, "cbUnit test report " + Date() + " " + Time() + ":"
 	
 	// Test Each test file
 	For test_file = Each cbUnit_TestFile
+		
+		// Reset test output file
+		output_file_path = cbUnit_Directory(True) + CBUNIT_TEST_PROGRAM_OUTPUT_FILE_NAME
+		TruncateFile(output_file_path)
+		
+		// Scaffold test program
 		GenerateListOfTestFunctionsAndConstants(test_file\path) // ScaffoldTestProgram() needs this
 		ScaffoldTestProgram(test_file\path, output_file_path, cbUnit_ApplicationDirectory)
 		
@@ -124,19 +142,12 @@ Function RunTests(test_paths$)
 		// Compile and run the test program
 		compiler_error = CompileAndRun(pass_command_line)
 		
-		// Write a possible compile error To the output file
-		If compiler_error Then
-			output_file = OpenToEdit(output_file_path)
-			SeekFile output_file, FileSize(output_file_path)
-			WriteLine output_file, ""
-			WriteLine output_file, test_file\path + ":"
-			WriteLine output_file, compiler_error
-			CloseFile output_file
-		EndIf
+		// Write report
+		GenerateAndWriteReport(report_file, output_file_path, test_file\path, compiler_error)
 	Next test_file
 	
-	// Open the log file and end the program
-	Execute(output_file_path)
+	// Open the report file and end the program
+	Execute(report_file_path)
 	End
 EndFunction
 
@@ -514,6 +525,89 @@ Function InitializeUnitTestsInDirectory(initialization_directory$)
 	Return message
 EndFunction
 
+// Report writing
+Function GenerateAndWriteReport(report_file, messages_file_path$, test_file_path$, compiler_error$)
+	Dim test_failed, count_failures, count_successes
+	Dim message.cbUnit_Message
+
+	// Write report header
+	WriteLine report_file, ""
+	WriteLine report_file, test_file_path + ":"
+	WriteLine report_file, ""
+	
+	// Check If the compiling failed
+	If compiler_error Then
+		// Compiling failed.
+		// Write a syntax error message To the output file.
+		WriteLine report_file, compiler_error
+		CloseFile report_file
+	Else
+		// Compiling succeeded And the test program was ran.´
+		ReadMessages(messages_file_path)
+		
+		// Check If the test program completed without crashing
+		message = Last(cbUnit_Message) // The Last message should be of Type FINISH
+		test_failed = False
+		If NULL = message Then
+			// For some reason the test program did Not Write any message. Either it crashed in a really beginning state, Or it did Not launch at all.
+			HandleError("RunTests", "Test program either did n"+"ot start at all, o"+"r ended b"+"efore writing any messages.")
+			test_failed = True // Set this in Case HendleError() will be changed so that it will Not End the program.
+		ElseIf CBUNIT_MESSAGE_FINISH <> message\message_type Then
+			// The test program did Not End correctly. But at least it was started correctly.
+			// This is probably due To a Memory Access Violation Or other runtime error that happened during the test. Nothing unusual.
+			WriteLine report_file, "  The test program ended unexpectedly. This might be due t"+"o a Memory Access Violation (MAV) o"+"r other runtime error."
+			If message\message_context Then WriteLine report_file, "  Crashed test: "+message\message_context+"()"
+			WriteLine report_file, "  You'll find incomplete test results that were gotten b"+"efore the crash below."
+			WriteLine report_file, ""
+			test_failed = True
+		EndIf
+		// Continue reporting regardless If the program crashed Or Not
+		
+		// Reset counters
+		count_failures = 0
+		count_successes = 0
+		
+		// Count failures And successes
+		For message = Each cbUnit_Message
+			If CBUNIT_MESSAGE_FAILURE = message\message_type Then
+				// Count a failure
+				test_failed = True
+				count_failures + 1
+			ElseIf CBUNIT_MESSAGE_SUCCESS = message\message_type Then
+				// Count a success
+				count_successes + 1
+			EndIf
+		Next message
+		
+		// Check If we have failure messages To Write.
+		If test_failed Then
+			// We have some failures.
+			// If they are test assertion failures, report them. (If Not, Then they are already reported above).
+			If count_failures > 0 Then
+				// We have test assertion failures.
+				// Iterate messages again To Read the failure messages.
+				WriteLine report_file, "  Failures:"
+				For message = Each cbUnit_Message
+					If CBUNIT_MESSAGE_FAILURE = message\message_type Then
+						WriteLine report_file, "    " + message\message_context+"():"
+						WriteLine report_file, "      " + message\message_content
+					EndIf
+				Next message
+				WriteLine report_file, ""
+			EndIf
+		Else
+			// All tests passed.
+			WriteLine report_file, "  PASSED."
+		EndIf
+		
+		// Write a summary
+		WriteLine report_file, "  " + (count_successes+count_failures) + " total assertions."
+		WriteLine report_file, "  " + count_successes + " succeeded assertions."
+		WriteLine report_file, "  " + count_failures + " failed assertions."
+		WriteLine report_file, ""
+	EndIf
+EndFunction
+
 // Type handling
 Function NewTestFile(path$)
 	Dim test_file.cbUnit_TestFile
@@ -542,6 +636,15 @@ Function NewHookFunction(function_name$)
 	Return hook_function\id
 EndFunction
 
+Function NewMessage(message_type, message_context$, message_content$)
+	Dim message.cbUnit_Message
+	
+	message = New(cbUnit_Message)
+	message\message_type = message_type
+	message\message_context = message_context
+	message\message_content = message_content
+EndFunction
+
 Function ResetTestFunctions()
 	Dim test_function.cbUnit_TestFunction
 	
@@ -556,6 +659,14 @@ Function ResetHookFunctions()
 	For hook_function = Each cbUnit_HookFunction
 		Delete hook_function
 	Next hook_function
+EndFunction
+
+Function ResetMessages()
+	Dim message.cbUnit_Message
+	
+	For message = Each cbUnit_Message
+		Delete message
+	Next message
 EndFunction
 
 // Settings
@@ -588,6 +699,43 @@ Function getSettingInstance(name$)
 		If setting\name = name Then Return setting\id
 	Next setting
 	Return 0
+EndFunction
+
+// Messages (from test application)
+Function ReadMessages(read_file_path$)
+	Dim file, message_type, message_context$, message_content$
+	
+	// Preparations
+	ResetMessages() // Remove old messages from memory, they are already handled.
+	If Not FileExists(read_file_path) Then Return HandleError("ReadMessages", "Message file does n"+"ot exist.")
+	file = OpenToRead(read_file_path)
+	If EOF(file) Then Return HandleError("ReadMessages", "Message file exists but is empty.")
+	
+	// Read messages
+	While Not EOF(file)
+		// Check message start
+		If 255 <> ReadByte(file) Then Return HandleError("ReadMessages", "Corrupted message. Wrong start value.")
+		
+		// Read message Type And context
+		message_type = ReadByte(file) // This is 1 - 4
+		message_context = ReadString(file) // This is a Function name
+		
+		// Read message content (If exists)
+		If CBUNIT_MESSAGE_FAILURE = message_type Then
+			message_content = ReadString(file)
+		EndIf
+		
+		// Check message End
+		If 127 <> ReadByte(file) Then Return HandleError("ReadMessages", "Corrupted message. Wrong e"+"nd value.")
+		
+		// All ok
+		NewMessage(message_type, message_context, message_content)
+	Wend
+	
+	// Finish
+	CloseFile file
+	DeleteFile read_file_path
+	Return True
 EndFunction
 
 // Tells if a certain setting is defined as a constant in the current test_*.cb file. This information is needed to be able to declare those constants automatically in case if they are not defined in the test file. Otherwise FVD will break and handling default values for runtime settings would be difficult.
@@ -623,6 +771,10 @@ Function Countdown(pattern$, separator$, count)
 		result = result + Replace(pattern, "$", Str(i))
 	Next i
 	Return result
+EndFunction
+
+Function TruncateFile(file_path$)
+	CloseFile OpenToWrite(file_path)
 EndFunction
 
 

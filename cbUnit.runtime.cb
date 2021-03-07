@@ -1,55 +1,26 @@
 
 //
 // PRIVATE DEFINITIONS
-// May only be used within this file.
+// May only be used within this file, or in *.skeleton.cb files.
 //
 
-Type cbUnit_Application
-	Field id
-	Field count_tests
-	Field count_successes
-	Field count_failures
-	Field current_context$ // Currently executing test_*() function name.
-EndType
+Const CBUNIT_MESSAGE_CONTEXT = 1
+Const CBUNIT_MESSAGE_FAILURE = 2
+Const CBUNIT_MESSAGE_SUCCESS = 3
+Const CBUNIT_MESSAGE_FINISH = 4
 
-Type cbUnit_Failure
-	Field id
-	Field context$ // Under which test_*() Function this failure occurred.
-	Field message$
-EndType
+Global cbUnit_CurrentContext$
+Global cbUnit_HasFailures
 
 
 //
 // PRIVATE FUNCTIONS
-// May only be called within this file, or in *.skeleton.cb files
+// May only be called within this file, or in *.skeleton.cb files.
 //
 
-Function cbUnit_GetApplication()
-	Dim app.cbUnit_Application
-	
-	app = First(cbUnit_Application)
-	If NULL = app Then
-		app = New(cbUnit_Application)
-		app\id = ConvertToInteger(app)
-	EndIf
-	Return app\id
-EndFunction
-
 Function cbUnit_SetCurrentContext(current_context$)
-	Dim app.cbUnit_Application
-	
-	app = cbUnit_GetApplication()
-	app\current_context = current_context
-EndFunction
-
-Function cbUnit_Fail(message$)
-	Dim app.cbUnit_Application, failure.cbUnit_Failure
-	
-	app = cbUnit_GetApplication()
-	failure = New(cbUnit_failure)
-	failure\id = ConvertToInteger(failure)
-	failure\context = app\current_context
-	failure\message = message
+	cbUnit_CurrentContext = current_context
+	cbUnit_WriteMessage(CBUNIT_MESSAGE_CONTEXT) // Do this Last so that cbUnit_WriteMessage() will Read the New context, Not the old one.
 EndFunction
 
 Function cbUnit_FillMessage(message$, default_message$, a$, b$="", c$="",d$="")
@@ -68,38 +39,34 @@ Function cbUnit_FillMessage(message$, default_message$, a$, b$="", c$="",d$="")
 	Return message
 EndFunction
 
-Function cbUnit_HasFailures()
-	Dim app.cbUnit_Application
-	
-	app = cbunit_GetApplication()
-	Return app\count_failures > 0
-EndFunction
-
 Function cbUnit_EndProgram()
-	hook_Cleanup() // Hook For test_*.cb To cleanup Before exit
-	cbUnit_WriteResults(CBUNIT_OUTPUT_FILE_PATH, CBUNIT_TEST_FILE_PATH) // These constants are defined in either test_*.cb files, Or If Not present there, cbUnit.cb inserts them To the compilable program.
+	cbUnit_SetCurrentContext("hook_Cleanup")
+	hook_Cleanup() // Hook For test_*.cb To cleanup Before Exit
+	cbUnit_SetCurrentContext("")
+	
+	cbUnit_WriteMessage(CBUNIT_MESSAGE_FINISH)
 	End
 EndFunction
 
-Function cbUnit_WriteResults(output_file_path$, test_file_path$)
-	Dim output_file
-	Dim app.cbUnit_Application, failure.cbUnit_Failure
+//
+// Sends a message to the main cbUnit program via a file.
+//
+Function cbUnit_WriteMessage(message_type, message_content$="")
+	Dim file
 	
-	output_file = OpenToEdit(output_file_path$)
-	SeekFile output_file, FileSize(output_file_path)
-	app = cbUnit_GetApplication()
-	WriteLine output_file, ""
-	WriteLine output_file, test_file_path+":"
-	WriteLine output_file, "  " + app\count_tests + " total assertions."
-	WriteLine output_file, "  " + app\count_successes + " succeeded assertions."
-	WriteLine output_file, "  " + app\count_failures + " failed assertions."
-	If app\count_failures Then
-		// Write test failure messages
-		WriteLine output_file, "  Failures:"
-		For failure.cbUnit_Failure = Each cbUnit_Failure
-			WriteLine output_file, "    " + failure\context + "():"
-			WriteLine output_file, "      " + failure\message
-		Next failure
-	EndIf
-	CloseFile output_file
+	// Open the output file (will be created If does Not exist) And seek To Write To the End of it, in Case it happens To have old content.
+	file = OpenToEdit(CBUNIT_OUTPUT_FILE_PATH)
+	SeekFile file, FileSize(CBUNIT_OUTPUT_FILE_PATH)
+	
+	// Write common information
+	WriteByte file, 255 // A constant indicator mark that a message starts here
+	WriteByte file, message_type
+	WriteString file, cbUnit_CurrentContext
+	
+	// Write message If this is a failure
+	If CBUNIT_MESSAGE_FAILURE = message_type Then WriteString file, message_content
+	
+	// Finish
+	WriteByte file, 127 // A constant indicator mark that a message ends here
+	CloseFile file // We need To close the file To actually Write it's content To the filesystem.
 EndFunction
