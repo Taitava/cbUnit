@@ -4,6 +4,7 @@
 // @ cbunit_directory: string, contains the directory where cbUnit files are located.
 // @ test_file_path: string, contains a directory + file name to a test_*.cb file that we should include into the program
 // @ output_file_path: string, contains a directory + file name to where we will write the test result. The file will be overwritten if it exists.
+// (You will only see these variable names if you view test-main.skeleton.cb. If you view your generated test program source code, the variables are substituted with their corresponding values.)
 
 Const CBUNIT_OUTPUT_FILE_PATH = "@output_file_path"
 Const CBUNIT_TEST_FILE_PATH = "@test_file_path"

@@ -3,6 +3,7 @@
 
 // Variables:
 // @ test_function_name: string, a function name that we should call. It contains a test that either fails or succeeds.
+// (You will only see these variable names if you view test-call.skeleton.cb. If you view your generated test program source code, the variables are substituted with their corresponding values.)
 
 // Prevent running the test call If a previous test has failed And If a setting orders us To do so.
 If Upper(Str(CBUNIT_STOP_AT)) = "F"+"UNCTION" Then
