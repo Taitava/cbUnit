@@ -549,7 +549,6 @@ Function GenerateAndWriteReport(report_file, messages_file_path$, test_file_path
 		// Compiling failed.
 		// Write a syntax error message To the output file.
 		WriteLine report_file, compiler_error
-		CloseFile report_file
 	Else
 		// Compiling succeeded And the test program was ran.´
 		ReadMessages(messages_file_path)
