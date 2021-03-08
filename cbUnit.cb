@@ -155,6 +155,9 @@ Function RunTests(test_paths$)
 		GenerateAndWriteReport(report_file, output_file_path, test_file\path, compiler_error)
 	Next test_file
 	
+	// Close the report file
+	CloseFile report_file
+	
 	// Open the report file and end the program
 	Execute(report_file_path)
 	End
