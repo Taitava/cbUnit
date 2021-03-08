@@ -160,7 +160,7 @@ Function RunTests(test_paths$)
 	End
 EndFunction
 
-Function cbUnit_Directory(end_with_backslash=0)
+Function cbUnit_Directory$(end_with_backslash=0)
 	Dim path$
 	
 	// Check If cbUnit is currently run from CBEditor
