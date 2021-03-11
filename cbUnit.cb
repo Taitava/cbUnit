@@ -137,7 +137,7 @@ Function RunTests(test_paths$)
 		// Export the test program If requested
 		If Int(getSetting("EXPORT_TEST_PROGRAM")) Then // Int() needed so that "0" would Not be interpreted As True.
 			// CBUNIT_EXPORT_TEST_PROGRAM setting is 1 Or 2. Both means To export, but 2 means To open the exported file too.
-			export_test_program_path = test_file\path + "UnitTestProgram.cb" // For example C:\CoolBasic\Projects\MyApplications\tests\test_MyApplication.cb becomes C:\CoolBasic\Projects\MyApplications\tests\test_MyApplication.cbUnitTestProgram.cb
+			export_test_program_path = FilePathInfo(test_file\path,"dirname") + "\exported_" + FilePathInfo(test_file\path,"basename") // For example C:\CoolBasic\Projects\MyApplication\tests\test_MyApplication.cb becomes C:\CoolBasic\Projects\MyApplication\tests\exported_test_MyApplication.cb
 			CopyFile cbUnit_CompilerDirectory+"\"+CBUNIT_TEST_PROGRAM_FILE_NAME, export_test_program_path // The source file Is generated in ScaffoldTestProgram().
 			If 2 = getSetting("EXPORT_TEST_PROGRAM") Then Execute export_test_program_path
 		EndIf

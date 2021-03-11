@@ -258,3 +258,78 @@ Function ReadLineFromFile(file_path$, line_number = 1, if_no_file$="", if_no_lin
 		Return if_no_file
 	EndIf
 EndFunction
+
+// Saved 2021-03-11 to http://www.cbrepository.com/codes/code/107/ (the same time that I wrote it in this file)
+// Modifications: None
+//
+// Extracts details from a file/folder path (does not read filesystem in any way). The first parameter defines a file/folder path and the second parameter defines what to return:
+//  - "dirname": Return the parent directory of a file or folder.
+//  - "basename": Return a file's complete name (or a folder's name), but without the parent directory.
+//  - "extension": Return a file's extension (or a folder's "extension", if the folder happens to have a dot in its name). The returned value does not contain a dot, and if the file/folder name happens to contain multiple dots, only the last dot is significant when determining the extension, i.e. for "myfile.inc.cb", the extension is ".cb", not ".inc.cb".
+//  - "filename": Return a file's name without an extension.
+//  - "all": Return a string containing all of the above separated by |, e.g. "C:\path\to\somewhere|myfile.txt|txt|myfile".
+//
+// Note: "/" will be replaced with "\" and trailing "\" will be removed!
+// Note: This function does not understand folder names . and .. ( . refers to "current directory" and .. to "parent directory"). Maybe they will be supported later?
+//
+Function FilePathInfo(path$, what$)
+	// Support Force Variable Declaration
+	Dim i, character$, collect$
+	Dim dirname$, basename$, extension$, filename$ // Returnable variables
+	
+	// Order the path To behave under tight rules!
+	path = Replace(path, "/", "\") // Convert slashes To backslashes.
+	If Right(path,1) = "\" Then path = Left(path,Len(path)-1) // Remove trailing backslash.
+	
+	// Do the hard work
+	collect = "extension"
+	For i = Len(path) To 1 Step -1
+		character$ = Mid(path, i,1)
+		If "." = character And "extension" = collect Then
+			// End collecting a file extension And start collecting a filename
+			basename = "." + basename
+			collect = "filename"
+		ElseIf "\" = character Then
+			// End collecting a filename (Or file extension) And start To collect dirname.
+			If "extension" = collect Then
+				// Actually this path contains NO extension, so move the collected "extension" To filename.
+				filename = extension
+				extension = ""
+				basename = filename // Should be already, because everything collected To extension is also collected To basename, but do this "just in Case" And "just For clarification".
+			EndIf
+			// Take a shortcut And don't iterate the String completely, because the rest belongs To dirname anyway.
+			dirname = Left(path, i-1) // -1 leaves out the trailing backslash.
+			Exit
+		Else
+			Select collect
+			Case "filename"
+				filename = character + filename
+				basename = character + basename
+			Case "extension"
+				extension = character + extension
+				basename = character + basename
+			EndSelect
+		EndIf
+		
+		If i=1 Then
+			// We did Not encounter a backslash
+			Select collect
+			Case "extension"
+				// We have collected a file extension, but actually it's a basename And filename. There is no extension, As we did Not encounter a Dot.
+				basename = extension
+				filename = extension
+				extension = ""
+			EndSelect
+		EndIf
+	Next i
+
+	// Now just figure out what To Return
+	Select what
+		Case "dirname" : Return dirname
+		Case "basename" : Return basename
+		Case "extension" : Return extension
+		Case "filename" : Return filename
+		Case "all" : Return dirname + "|" + basename + "|" + extension + "|" + filename
+		Default: MakeError "FilePathInfo('"+path+"', '"+what+"'): It's unclear what you want from me!" // Got no clue.
+	EndSelect
+EndFunction
