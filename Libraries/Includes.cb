@@ -1,2 +1,3 @@
 Include "Libraries\cbRepository.com.cb"
 Include "Libraries\CommandLineArguments\CommandLineArguments.cb"
+Include "Libraries\PatternCompare\PatternCompare.cb"

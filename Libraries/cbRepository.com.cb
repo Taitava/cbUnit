@@ -1,34 +1,5 @@
 
 
-// Copied 2021-02-12 from http://www.cbrepository.com/codes/code/87/
-// Created 2013-09-20 by Jare
-// Modifications: Made the function FVD compatible
-Function PatternCompare(pattern$, compare$, case_sensitive=1, wildcard$="*", escape$="\")
-	Dim position, count_bits, i, bit$ // Force Variable Declaration
-	
-    position = 1
-    If Not case_sensitive Then
-        pattern = Lower(pattern)
-        compare = Lower(compare)
-    EndIf
-    If escape <> "" Then
-        pattern = Replace(pattern, escape+escape, Chr(1))
-        pattern = Replace(pattern, escape+wildcard, Chr(2))
-    EndIf
-    count_bits = CountWords2(pattern, wildcard)
-    For i = 1 To count_bits
-        bit$    = GetWord2(pattern, i, wildcard)
-        bit     = Replace(bit, Chr(1), escape)
-        bit     = Replace(bit, Chr(2), wildcard)
-        position= InStr(compare, bit, position)
-        If position = 0 Then Return False
-        If i = 1 And position > 1 And Left(pattern,1) <> wildcard Then Return False
-        If i = count_bits And position < Len(compare) - Len(bit) + 1 And Right(pattern,1) <> wildcard Then Return False
-    Next i
-    Return True
-EndFunction
-
-
 // Copied 2021-02-12 from http://www.cbrepository.com/codes/code/94/
 // Created 2014-12-26 by Jare
 // Modifications: Made the function FVD compatible

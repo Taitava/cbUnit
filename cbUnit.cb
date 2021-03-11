@@ -480,7 +480,7 @@ Function GenerateListOfTestFiles(test_paths$)
 			ListFiles(test_path, "cb", True) // True: recursive search
 			For found_file = Each FoundFile
 				// Now ensure that the file has a "test_" prefix
-				If PatternCompare(CBUNIT_TEST_FILE_PATTERN, found_file\name, False, "*") Then
+				If PatternCompare(CBUNIT_TEST_FILE_PATTERN, found_file\name, False) Then
 					// This is a test_*.cb file
 					NewTestFile(found_file\absolute_path)
 				EndIf
