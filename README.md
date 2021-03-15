@@ -174,6 +174,54 @@ You don't really need to know what these different setting classes mean, as they
 ### Application's global settings
 These do not exist yet.
 
+## The structure of cbUnit
+While not a first thing to learn in cbUnit, the structure of how cbUnit is put together might give you the best understanding on how cbUnit works and how you can make it to best work for you.
+
+In this chapter I'm going to discuss about what different files do in cbUnit and when are they used; and how functions and other symbols are namespaced in cbUnit and what kind of restrictions this namespacing adds to your application code.
+
+### Files and folders in `cbUnit` folder
+
+File/folder          | Used by application   | Description
+-------------------- | --------------------- | -----------
+CBCompiler\\         | `cbUnit.exe`           | Contains `CBCompiler.exe` (after installation). Will also contain some temporary files related to compiling test programs, but to simplify this listing, I'll leave out compiling related temporary files for now. Maybe they can have another sub-chapter later?
+Install\\            | *Only you use these, manually.* | Constains helper scripts for you to install cbUnit and libraries required by it. Instructions can be found at the beginning of this readme.
+Libraries\\ \*       | `cbUnit.exe`           | Contains extra functions needed by `cbUnit.exe`. These libraries **will not** be included in your test program, so you cannot utilize them in your tests/application code, but on the other hand, they also do not pollute your application's namespace.
+tests\\              | *Internal testing for cbUnit.* | The contents of this folder are not used at all when you run your own application's tests. This folder contains cbUnit's own, internal unit tests that are used when developing cbUnit itself. And actually, at the moment of writing this, you don't even have this folder because I haven't managed to get any unit tests finished for cbUnit itself. :(
+.gitignore           | *Git version control.*   | Lists some files that are not needed in version control. Not used in the unit testing process.
+cbUnit.asserts.cb    | `cbUnitTestProgram.exe` | Contains all `Assert*()` functions that you can utilize in your `test_*.cb` files.
+cbUnit.cb \*         | `cbUnit.exe`           | The big brain of cbUnit, an architect that draws the lines how your unit test programs will be built. When compiled, this (+ some library files) will become `cbUnit.exe`.
+cbUnit.exe           | `cbUnit.exe`           | The main cbUnit program that you execute when you want to start launching your unit tests.
+cbUnit.report.txt    | `cbUnit.exe`           | Contains the human-readable results of your latest test run.
+cbUnit.runtime.cb    | `cbUnitTestProgram.exe` | Contains (mostly) internal functions that cbUnit needs when running unit tests - mostly related to reporting the assertion results to `cbUnit.exe`.
+CompilerErrors.cb \* | `cbUnit.exe`           | A list of error messages that `CBCompiler.exe` may yell out loud.
+LICENSE              | -                     | It's the document that no-one reads.
+README.md            | -                     | It's the document that someone reads (you).
+test-call.skeleton.cb| `cbUnitTestProgram.exe` | Appears repeatedly in `cbUnitTestProgram.exe`, once for each of your `test_*()` function. Handles calling a test function and some hooks before/after the call.
+test-main.skeleton.cb| `cbUnitTestProgram.exe` | The main structure/skeleton for `cbUnitTestProgram.exe`. Contains a couple of definitions and hook calls, and includes `cbUnit.asserts.cb`, `cbUnit.runtime.cb` and your own `test_*.cb` file (only one of them at a time, in case you have many. Each `test_*.cb` file will be compiled into it's own, separate `cbUnitTestProgram.exe` test program.).
+
+\*) All of these source code files are included when compiling `cbUnit.exe`, so they are **not used/compiled** at the time when you run your application's unit tests.
+
+`cbUnitTestProgram.exe` Is not permanently present in the filesystem, because it is compiled when running the unit tests and removed immediately after it has been run. It lives its short life in the `CBCompiler\` directory. To describe it shortly, `cbUnitTestProgram.exe` contains *your application code* (or part of it) **wrapped in** *cbUnit test framework*.
+
+### Namespacing in cbUnit and in your application
+How does cbUnit affect your application's structure and code base? What does it add into your application?
+
+One principal design rule of cbUnit is that you will *never* include cbUnit in your application's code. It's the other way around: cbUnit includes your application in its test program. Or actually: cbUnit makes you to include your application source code (or part of it) in `test_*.cb` file(s) that you have created yourself - and cbUnit includes those test files.
+
+Now that you will not add any include commands to your application's code, it means that cbUnit will not fill up your application when it's not needed - for example when creating a production version of an application. Normal users don't need unit testing functionality - they just want to use your product the normal way!
+
+While this design makes it happen that sometimes your application is compiled with cbUnit's runtime functions included (when `cbUnit.exe` ignites the compilation) and sometimes without them (when you compile your application), you need to design your application's code so that it doesn't overlap with the naming conventions of `cbUnitTestProgram`. cbUnit uses the following naming styles for its functions and other global symbols in `cbUnitTestProgram`:
+- `Assert*()`: You will call these assertion functions in your `test_*.cb` files to check that functions inside your application work like they should. Do not use/define any symbols that start with `Assert` in your application code (exception: you can create your custom `Assert*()` functions in your `tests\` folder and include them yourself in your `test_*.cb` files).
+- `test_*()`: You will define these functions in your `test_*.cb` files. It's a good habit to avoid using the `test_` prefix in function names in your application's code, but this is not enforced. cbUnit will only call `test_*()` functions that are defined in `test_*.cb` files. cbUnit does not read any function names from your application's code, and therefore won't ever call any functions that you define in your application's code.
+- `cbUnit_*`: Mostly internal runtime functions/other symbols. Do not use names that start with `cbUnit_` in your own code (exception: you can call `cbUnit_EndProgram()` in your test files and/or in your application code if you need to end your program in the middle of testing).
+- `CBUNIT_*`: Constants that you can use to configure how cbUnit works. You may only use them in your `test_*.cb` files. See above for more information.
+- `hook_*()`: A few hook functions that you can define in your `test_*.cb` files. See above for more information.
+
+The above items should include all naming conventions that cbUnit will add to your application when you run unit tests. But if you want to double check from the source code, you should see files `cbUnit.asserts.cb`, `cbUnit.runtime.cb`, `test-call.skeleton.cb` and `test-main.skeleton.cb`. Maybe `hook_*()` functions and `CBUNIT_*` constants are the only symbols that are not defined in those files. `cbUnit.cb` has code that defines them in your test program if you don't define them in your `test_*.cb` files.
+
+If you have multiple `test_*.cb` files in your `tests\` folder, you should be aware, that multiple `test_*.cb` files will **never** be compiled together into the same testing program. Each one of them will be compiled and run separately from each other (although the compilings and runnings will happen automatically one after each other). This means, that you can for example define a function named `Abc()` in both `test_a.cb` and `test_b.cb` without the compiling failing due to duplicate symbol names. On the other hand, you cannot call a function defined in `test_a.cb` from `test_b.cb`. If you need to share functions or other symbols between multiple `test_*.cb` files, you should either define the shared symbols in your application's code or in a separate file in your `tests\` folder (named so that it does not begin with `test_`, so that cbUnit will not accidentally interpret it as a unit test file) and then include it in all the `test_*.cb` files that need it.
+
+
 ## Contributing
 Ideas, bug repots, pull requests: all welcome! :) [Just raise an issue in GitHub](https://github.com/Taitava/cbUnit/issues)
 
