@@ -111,12 +111,13 @@ EndFunction
 #### Hooks in a `test_*.cb` file
 You can define the following *optional* functions in your `test_*.cb` file, and cbUnit will call them during appropriate events.
 
-Hook | Description
------|------------
-`hook_Setup()` | Called before calling the first test function.
-`hook_SetupTest(function_name$)` | Called before calling each test function. Gets a name of a test function that will be called next as a parameter.
-`hook_Cleanup()` | Called just before ending the test program, in both cases: a) all tests ran, or b) a stop rule triggered after a failing test.
-`hook_CleanupTest(function_name$)` | Called after calling a certain test function. Gets also called if the particular test function had a failing assertion and a stop rule triggered to end the test program.
+| Hook                                     | Description                                                                                                                                                                                                                                                                                 |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hook_Setup()`                           | Called before calling the first test function.                                                                                                                                                                                                                                              |
+| `hook_SetupTest(function_name$)`         | Called before calling each test function. Gets a name of a test function that will be called next as a parameter.                                                                                                                                                                           |
+| `hook_Cleanup()`                         | Called just before ending the test program, in both cases: a) all tests ran, or b) a stop rule triggered after a failing test.                                                                                                                                                              |
+| `hook_CleanupTest(function_name$)`       | Called after calling a certain test function. Gets also called if the particular test function had a failing assertion and a stop rule triggered to end the test program.                                                                                                                   |
+| `hook_CrashPlan(crashed_function_name$)` | If your application ends unexpectedly during testing, and if you have defined a `hook_CrashPlan()` function, cbUnit will compile and run an extra program that will call just this `hook_CrashPlan()` function so that you can do some custom cleaning after a crash. cbUnit will pass it a parameter that contains a name of a `test_*()` function under which the crash happened. More on this later. |
 
 Example:
 ```
@@ -155,6 +156,30 @@ You can pass command line arguments to your application while testing via two wa
 2. **Or**: Define `Const CBUNIT_COMMANDLINE = "Some command line arguments"` in your `test_*.cb` file.
 
 If both of these are present, only the first one will be used.
+
+## When your application crashes
+(Note that I didn't write *if*...)
+
+Unfortunately CoolBasic doesn't really have any good debugging features. If your application does something wrong during runtime, it probably leads to an infamous error message saying *Memory access violation* (MAV) which does not tell actually anything about what went wrong.
+
+Unfortunately cbUnit is not a magician who could pinpoint what caused your application to crash. But cbUnit does have a couple of features that maybe can become handy when your application does a dramatic exit during testing. Before looking at them, let's shortly define, what kind of test program endings are *normal* and what are *unexpected*.
+
+A test program may exit in one of the following ways:
+- A `test_*.cb` file is completely processed till the end -> *Normal ending*.
+- Your own code calls the `cbUnit_EndProgram()` function to exit the program -> *Normal ending*.
+- A *Memory access violation* or other CoolBasic's default runtime error happens -> *Unexpected ending*.
+- Your own code runs a `MakeError` command -> *Unexpected ending*.
+
+First of all, cbUnit inspects how the test program exits. The test program needs to call a specific function before it exits - otherwise cbUnit interprets that the test program has crashed. In this case, the report will contain a message saying that the test program ended unexpectedly, and the message indicates under what `test_*()` function the crash happened. (Sorry, but the report does not contain the actual error message of the crash - be it *MAV* or whatever - because there is no way for cbUnit to know it). If you divide your test file into many different `test_*()` functions, you might be able to know a little bit better, where the actual source of pain might lay.
+
+The second feature is not so much related to finding out the source of error, but to cleaning up after a crash. In the *Hooks in a test_\*.cb file* section I have discussed briefly about hook functions, such as `hook_Cleanup()`, which can be used to for example delete any possible temporary files that you might have created during your tests. But `hook_Cleanup()` gets only called if your application executes normally till the end and does not crash, right? Yes, right! If your application crashes, `hook_Cleanup()` won't be ever called, and your possible temporary files are left uncleaned on your filesystem. But you still have one option for cleaning up the mess.
+
+If you have defined a function named `hook_CrashPlan()` in your `test_*.cb` file, then after a crash, cbUnit will compile and run a special program whose only purpose is to call your `hook_CrashPlan()` function and then exit. Pay attention to the following design aspects of this feature:
+- `hook_CrashPlan()` will be passed one parameter which contains the name of the `test_*()` function under which the crash happened. You can use this to check what kind of cleanup might be needed. Your function definition needs to have this parameter even if you don't use it for anything - otherwise compiling the crash plan program will fail.
+- `hook_CrashPlan()` is not designed for continuing the execution of your tests or your application. It is also not designed for inspecting what caused the crash (simply no such information could be gathered up with this function). The only purpose is to clean up temporary files (if you have created any).
+- Do not call any `Assert*()` functions in `hook_CrashPlan()`. Their results would not be used for anything.
+- Keep your cleanup process *at the grassroots level*: Try to avoid calling functions from your application as much as you can. Try to cope with vanilla CoolBasic commands. If you use a lot of your application's custom functions in `hook_CrashPlan()`, you will take a risk that also this cleanup program will crash just like the original program did.
+- To keep things as simple as possible, the program that calls `hook_CrashPlan()` does not call any other `hook_*()` functions. If your cleanup process requires calling other `hook_*()` functions that you have defined in the same file, you can do it in the `hook_CrashPlan()` function.
 
 ## Settings
 ### In test_*.cb files

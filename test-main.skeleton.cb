@@ -4,6 +4,7 @@
 // @ cbunit_directory: string, contains the directory where cbUnit files are located.
 // @ test_file_path: string, contains a directory + file name to a test_*.cb file that we should include into the program
 // @ output_file_path: string, contains a directory + file name to where we will write the test result. The file will be overwritten if it exists.
+// @ is_running_crash_plan: bool, True if the program is meant to call hook_CrashPlan() function instead of normal test_*() functions.
 // (You will only see these variable names if you view test-main.skeleton.cb. If you view your generated test program source code, the variables are substituted with their corresponding values.)
 
 Const CBUNIT_OUTPUT_FILE_PATH = "@output_file_path"
@@ -18,10 +19,12 @@ Include "@cbunit_directory\cbUnit.asserts.cb"
 // Include the user-defined test file
 Include "@test_file_path"
 
-// Hook for test_*.cb to do preparations.
-cbUnit_SetCurrentContext("hook_Setup")
-hook_Setup()
-cbUnit_SetCurrentContext("") // Mark that we are now outside of any functions.
+// Hook for test_*.cb to do preparations. (But call it only in normal test program, not when recurring after a crash.)
+If Not @is_running_crash_plan Then
+	cbUnit_SetCurrentContext("hook_Setup")
+	hook_Setup()
+	cbUnit_SetCurrentContext("") // Mark that we are now outside of any functions.
+EndIf
 
 // INSERT TEST CALLS HERE //
 

@@ -12,7 +12,7 @@ Const CBUNIT_TEST_PROGRAM_OUTPUT_FILE_NAME = "cbUnit.test.dat" // Test program w
 Const CBUNIT_REPORT_FILE_NAME = "cbUnit.report.txt" // Will contain a human readable result of the tests.
 Const CBUNIT_TEST_FUNCTION_PATTERN = "Function test_*(*"
 Const CBUNIT_HOOK_FUNCTION_PATTERN = "Function hook_*(*"
-Const CBUNIT_HOOK_FUNCTION_NAMES = "hook_Setup:0 hook_SetupTest:1 hook_Cleanup:0 hook_CleanupTest:1" // Number :x at the end of each function name tells the number of parameters the function takes. Needed when defining empty functions.
+Const CBUNIT_HOOK_FUNCTION_NAMES = "hook_Setup:0 hook_SetupTest:1 hook_Cleanup:0 hook_CleanupTest:1" // Number :x at the end of each function name tells the number of parameters the function takes. Needed when defining empty functions. Note that hook_CrashPlan is not defined here, because its definition is not mandatory.
 Const CBUNIT_CONSTANT_PATTERN = "Const CBUNIT_*=*"
 Const CBUNIT_TEST_MAIN_SKELETON = "test-main.skeleton.cb"
 Const CBUNIT_TEST_CALL_SKELETON = "test-call.skeleton.cb"
@@ -106,8 +106,8 @@ Function MainProgram()
 EndFunction
 
 Function RunTests(test_paths$)
-	Dim report_file_path$, report_file, output_file_path$, export_test_program_path$, pass_command_line$, compiler_error$
-	Dim test_file.cbUnit_TestFile
+	Dim report_file_path$, report_file, output_file_path$, export_test_program_path$, pass_command_line$, compiler_error$, test_program_result, crashed_function_name$, crash_plan_compiler_error$
+	Dim test_file.cbUnit_TestFile, message.cbUnit_Message
 	
 	SCREEN TextWidth("Compiling a"+"nd running tests..."), TextHeight("H")
 	ClsColor 212,208,200
@@ -152,7 +152,31 @@ Function RunTests(test_paths$)
 		compiler_error = CompileAndRun(pass_command_line)
 		
 		// Write report
-		GenerateAndWriteReport(report_file, output_file_path, test_file\path, compiler_error)
+		test_program_result = GenerateAndWriteReport("normal", report_file, output_file_path, test_file\path, compiler_error)
+		
+		// Check the result To see If the test program crashed
+		Select test_program_result
+		Case 0
+			// Nothing unusual. Assertions may have succeeded Or failed, but there's nothing To react To here.
+		Case 1
+			// The test program has crashed.
+			// Check If the program contains a hook_CrashPlan() Function.
+			If isHookFunctionDefined("hook_CrashPlan") Then
+				// A crash plan Function is defined.
+				// Compile a program that calls the crashplan Function
+				WriteLine report_file, "  hook_CrashPlan() f"+"unction is defined. Result of running the crash plan program:"
+				message = Last(cbUnit_Message)
+				crashed_function_name = message\message_context // This indicates the Last Function that was called Before the program crashed.
+				TruncateFile(output_file_path)
+				ScaffoldCrashPlanProgram(test_file\path, output_file_path, cbUnit_ApplicationDirectory, crashed_function_name)
+				crash_plan_compiler_error = CompileAndRun(pass_command_line)
+				GenerateAndWriteReport("crash_plan", report_file, output_file_path, test_file\path, crash_plan_compiler_error)
+			Else
+				// No crashplan Function is defined.
+				WriteLine report_file, "  Will n"+"ot run a crash plan program because a f"+"unction named hook_CrashPlan() is n"+"ot defined."
+				WriteLine report_file, ""
+			EndIf
+		EndSelect
 	Next test_file
 	
 	// Close the report file
@@ -370,12 +394,62 @@ Function ScaffoldTestProgram(test_file_path$, output_file_path$, application_dir
 			line_ = IReplace(line_, "@output_file_path", output_file_path)
 			line_ = IReplace(line_, "@application_directory", application_directory)
 			line_ = IReplace(line_, "@cbunit_directory", cbUnit_Directory())
+			line_ = IReplace(line_, "@is_running_crash_plan", False)
 			WriteLine test_program_file, line_
 		EndIf
 	Wend
 	
 	CloseFile main_skeleton_file
 	CloseFile test_program_file
+EndFunction
+
+Function ScaffoldCrashPlanProgram(test_file_path$, output_file_path$, application_directory$, crashed_function_name$)
+	Dim crash_plan_program_file, runtime_setting_definitions$, hook_function_definions$, main_skeleton_file, line_$, call$
+
+	
+	// Prepare Write destination
+	crash_plan_program_file = OpenToWrite(cbUnit_CompilerDirectory+"\"+CBUNIT_TEST_PROGRAM_FILE_NAME) // We can use the CBUNIT_TEST_PROGRAM_FILE_NAME constant For a crash plan file too, because the value is actually more generic than just For _test_ prgorams. It's "Editor.out".
+	
+	// Write runtime settings that are Not present in the test_*.cb file
+	// cbUnit's internal functions should Not need these when running a crash plan, but it's theoretically possible that the constants are used by the application developer in the test_*.cb file.
+	runtime_setting_definitions = EnsureRuntimeSettingsAreDefined()
+	If runtime_setting_definitions Then
+		WriteLine crash_plan_program_file, "// Define runtime settings with d"+"efault values:"
+		WriteLine crash_plan_program_file, runtime_setting_definitions
+		WriteLine crash_plan_program_file, ""
+	EndIf
+	
+	// Write empty hook functions To substitute those that are Not present in the test_*.cb file
+	// Needed because tst-main.skeleton.cb has a call For hook_Setup() Function. It's Not actually called when running a crash plan, but the call symbol still exists in the program, so the definition must exist too.
+	hook_function_definions = EnsureHookFunctionsAreDefined()
+	If hook_function_definions Then
+		WriteLine crash_plan_program_file, "// Define empty hook functions:"
+		WriteLine crash_plan_program_file, hook_function_definions
+		WriteLine crash_plan_program_file, ""
+	EndIf
+	
+	// Main skeleton
+	main_skeleton_file = OpenToRead(cbUnit_Directory(True)+CBUNIT_TEST_MAIN_SKELETON)
+	While Not EOF(main_skeleton_file)
+		line_$ = ReadLine(main_skeleton_file)
+		If "// INSERT TEST CALLS HERE //" = line_ Then
+			// This is a mark that we should Insert the crash plan Function call here (although the comment says "TEST CALLS", we can use it For the crash plan Function call in this Case).
+			WriteLine crash_plan_program_file, "cbUnit_SetCurrentContext("+Chr(34)+"hook_CrashPlan"+Chr(34)+")"
+			WriteLine crash_plan_program_file, "hook_CrashPlan("+Chr(34)+crashed_function_name+Chr(34)+")"
+			WriteLine crash_plan_program_file, "cbUnit_SetCurrentContext("+Chr(34)+Chr(34)+")"
+		Else
+			// Normal code Line. Substitute variables.
+			line_ = IReplace(line_, "@test_file_path", test_file_path)
+			line_ = IReplace(line_, "@output_file_path", output_file_path)
+			line_ = IReplace(line_, "@application_directory", application_directory)
+			line_ = IReplace(line_, "@cbunit_directory", cbUnit_Directory())
+			line_ = IReplace(line_, "@is_running_crash_plan", True)
+			WriteLine crash_plan_program_file, line_
+		EndIf
+	Wend
+	
+	CloseFile main_skeleton_file
+	CloseFile crash_plan_program_file
 EndFunction
 
 // Returns a string of constants that are not defined in the current test_*.cb file.
@@ -402,7 +476,6 @@ EndFunction
 // Returns a string of hook functions that are not defined in the current test_*.cb file.
 Function EnsureHookFunctionsAreDefined()
 	Dim result$, i, hook_function_details$, hook_function_name$, count_parameters, is_defined, parameters$
-	Dim defined_hook_function.cbUnit_HookFunction
 	
 	result = ""
 	
@@ -412,12 +485,7 @@ Function EnsureHookFunctionsAreDefined()
 		hook_function_name = GetWord2(hook_function_details, 1, ":")
 		count_parameters = GetWord2(hook_function_details, 2, ":")
 		
-		// Iterate hook functions defined in the test_*.cb file
-		is_defined = False
-		For defined_hook_function = Each cbUnit_HookFunction
-			If defined_hook_function\function_name = hook_function_name Then is_defined = True
-		Next defined_hook_function
-		If Not is_defined Then
+		If Not isHookFunctionDefined(hook_function_name) Then
 			// Define an empty Function
 			parameters = Countdown("_$", ",", count_parameters) // Produces a String of parameter variable names like "_0,_1,_2"
 			result = result + "Function "+hook_function_name+"("+parameters+") : EndFunction" + cbUnit_EOL
@@ -538,14 +606,18 @@ Function InitializeUnitTestsInDirectory(initialization_directory$)
 EndFunction
 
 // Report writing
-Function GenerateAndWriteReport(report_file, messages_file_path$, test_file_path$, compiler_error$)
-	Dim test_failed, count_failures, count_successes
+Function GenerateAndWriteReport(report_type$, report_file, messages_file_path$, test_file_path$, compiler_error$)
+	Dim result, test_failed, count_failures, count_successes
 	Dim message.cbUnit_Message
 
-	// Write report header
-	WriteLine report_file, ""
-	WriteLine report_file, test_file_path + ":"
-	WriteLine report_file, ""
+	result = 0 // 0 means that nothing exceptional has happened, the test program did Not crash.
+
+	If "normal" = report_type Then
+		// Write report header
+		WriteLine report_file, ""
+		WriteLine report_file, test_file_path + ":"
+		WriteLine report_file, ""
+	EndIf
 	
 	// Check If the compiling failed
 	If compiler_error Then
@@ -566,57 +638,77 @@ Function GenerateAndWriteReport(report_file, messages_file_path$, test_file_path
 		ElseIf CBUNIT_MESSAGE_FINISH <> message\message_type Then
 			// The test program did Not End correctly. But at least it was started correctly.
 			// This is probably due To a Memory Access Violation Or other runtime error that happened during the test. Nothing unusual.
-			WriteLine report_file, "  The test program ended unexpectedly. This might be due t"+"o a Memory Access Violation (MAV) o"+"r other runtime error."
-			If message\message_context Then WriteLine report_file, "  Crashed test: "+message\message_context+"()"
-			WriteLine report_file, "  You'll find incomplete test results that were gotten b"+"efore the crash below."
-			WriteLine report_file, ""
+			Select report_type
+			Case "normal"
+				WriteLine report_file, "  The test program ended unexpectedly. This might be due t"+"o a Memory Access Violation (MAV) o"+"r other runtime error."
+				If message\message_context Then WriteLine report_file, "  Crashed test: "+message\message_context+"()"
+				WriteLine report_file, "  You'll find incomplete test results that were gotten b"+"efore the crash below."
+				WriteLine report_file, ""
+			Case "crash_plan"
+				WriteLine report_file, "  Also the crash plan program ended unexpectedly. This might be due t"+"o the same reason why the original test program crashed."
+				If message\message_context Then WriteLine report_file, "  Crashed f"+"unction: "+message\message_context+"()"
+				WriteLine report_file, ""
+			EndSelect
 			test_failed = True
+			result = 1 // 1 means that the test program crashed
 		EndIf
 		// Continue reporting regardless If the program crashed Or Not
 		
-		// Reset counters
-		count_failures = 0
-		count_successes = 0
-		
-		// Count failures And successes
-		For message = Each cbUnit_Message
-			If CBUNIT_MESSAGE_FAILURE = message\message_type Then
-				// Count a failure
-				test_failed = True
-				count_failures + 1
-			ElseIf CBUNIT_MESSAGE_SUCCESS = message\message_type Then
-				// Count a success
-				count_successes + 1
+		Select report_type
+		Case "normal"
+			// Reset counters
+			count_failures = 0
+			count_successes = 0
+			
+			// Count failures And successes
+			For message = Each cbUnit_Message
+				If CBUNIT_MESSAGE_FAILURE = message\message_type Then
+					// Count a failure
+					test_failed = True
+					count_failures + 1
+				ElseIf CBUNIT_MESSAGE_SUCCESS = message\message_type Then
+					// Count a success
+					count_successes + 1
+				EndIf
+			Next message
+			
+			// Check If we have failure messages To Write.
+			If test_failed Then
+				// We have some failures.
+				// If they are test assertion failures, report them. (If Not, Then they are already reported above).
+				If count_failures > 0 Then
+					// We have test assertion failures.
+					// Iterate messages again To Read the failure messages.
+					WriteLine report_file, "  Failures:"
+					For message = Each cbUnit_Message
+						If CBUNIT_MESSAGE_FAILURE = message\message_type Then
+							WriteLine report_file, "    " + message\message_context+"():"
+							WriteLine report_file, "      " + message\message_content
+						EndIf
+					Next message
+					WriteLine report_file, ""
+				EndIf
+			Else
+				// All tests passed.
+				WriteLine report_file, "  PASSED."
 			EndIf
-		Next message
-		
-		// Check If we have failure messages To Write.
-		If test_failed Then
-			// We have some failures.
-			// If they are test assertion failures, report them. (If Not, Then they are already reported above).
-			If count_failures > 0 Then
-				// We have test assertion failures.
-				// Iterate messages again To Read the failure messages.
-				WriteLine report_file, "  Failures:"
-				For message = Each cbUnit_Message
-					If CBUNIT_MESSAGE_FAILURE = message\message_type Then
-						WriteLine report_file, "    " + message\message_context+"():"
-						WriteLine report_file, "      " + message\message_content
-					EndIf
-				Next message
+			
+			// Write a summary
+			WriteLine report_file, "  " + (count_successes+count_failures) + " total assertions."
+			WriteLine report_file, "  " + count_successes + " succeeded assertions."
+			WriteLine report_file, "  " + count_failures + " failed assertions."
+			WriteLine report_file, ""
+			
+		Case "crash_plan"
+			If Not test_failed Then // The wrod "test" is actually misleading here, in this Case it just means whether the program execution failed (= crashed) Or Not.
+				// Only Write this message If the crash plan program did Not crash.
+				WriteLine report_file, "  Crash plan program executed successfully."
 				WriteLine report_file, ""
 			EndIf
-		Else
-			// All tests passed.
-			WriteLine report_file, "  PASSED."
-		EndIf
-		
-		// Write a summary
-		WriteLine report_file, "  " + (count_successes+count_failures) + " total assertions."
-		WriteLine report_file, "  " + count_successes + " succeeded assertions."
-		WriteLine report_file, "  " + count_failures + " failed assertions."
-		WriteLine report_file, ""
+		EndSelect
 	EndIf
+	
+	Return result
 EndFunction
 
 // Type handling
@@ -757,6 +849,16 @@ Function isSettingDefinedInTest(name$)
 	If NULL <> setting Then
 		Return setting\source = "test"
 	EndIf
+	Return False
+EndFunction
+
+Function isHookFunctionDefined(hook_function_name$)
+	Dim defined_hook_function.cbUnit_HookFunction
+	
+	// Iterate hook functions defined in the test_*.cb file
+	For defined_hook_function = Each cbUnit_HookFunction
+		If defined_hook_function\function_name = hook_function_name Then Return True
+	Next defined_hook_function
 	Return False
 EndFunction
 
