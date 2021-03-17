@@ -12,12 +12,12 @@ Const CBUNIT_TEST_FILE_PATH = "@test_file_path"
 
 ChDir "@application_directory"
 
+// Include the user-defined test file. (Do this before any other includes in order to try to get possible compiler errors to - most of the time - point to the correct file, which usually is the test_*.cb file. The compiler has a bug that it some times reports an incorrect file for syntax errors.)
+Include "@test_file_path"
+
 // Include runtime test handling tools & basic assertion related tools
 Include "@cbunit_directory\cbUnit.runtime.cb"
 Include "@cbunit_directory\cbUnit.asserts.cb"
-
-// Include the user-defined test file
-Include "@test_file_path"
 
 // Hook for test_*.cb to do preparations. (But call it only in normal test program, not when recurring after a crash.)
 If Not @is_running_crash_plan Then
